@@ -143,7 +143,7 @@ public class OrgFile {
     }
 
     /**
-     * Add the file to the DB, then create file on disk if does not exist
+     * Add the file to the DB and create file on disk if does not exist
      *
      * @param context
      */
@@ -151,11 +151,12 @@ public class OrgFile {
         ContentResolver resolver = context.getContentResolver();
         this.nodeId = addFileOrgDataNode(resolver);
 
+        if (!new File(getFilePath()).exists()) createFile(context);
+
         this.id = addFileNode(nodeId, resolver);
         ContentValues values = new ContentValues();
         values.put(OrgData.FILE_ID, id);
         resolver.update(OrgData.buildIdUri(nodeId), values, null, null);
-        if (!new File(getFilePath()).exists()) createFile(context);
     }
 
     /**
@@ -166,6 +167,7 @@ public class OrgFile {
         values.put(Files.FILENAME, filename);
         values.put(Files.NAME, name);
         values.put(Files.NODE_ID, nodeId);
+        values.put(Files.TIME_MODIFIED, new File(getFilePath()).lastModified());
 
         Uri uri = resolver.insert(Files.CONTENT_URI, values);
         return Long.parseLong(Files.getId(uri));
