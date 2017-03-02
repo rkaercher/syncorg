@@ -23,9 +23,13 @@ public class ExternalSynchronizer extends Synchronizer {
     String syncFolder;
 
     public ExternalSynchronizer(Context context) {
+        this(context, null);
+    }
+
+    public ExternalSynchronizer(Context context, String syncFolder) {
         super(context);
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        syncFolder = preferences.getString("syncFolder", "null");
+        this.syncFolder = syncFolder != null ? syncFolder : preferences.getString("syncFolder", "null");
         File dir = new File(getAbsoluteFilesDir());
 
         if (PermissionManager.permissionGranted(context) == false) return;

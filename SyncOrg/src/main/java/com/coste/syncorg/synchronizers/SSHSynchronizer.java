@@ -3,6 +3,7 @@ package com.coste.syncorg.synchronizers;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 import com.coste.syncorg.services.PermissionManager;
 import com.coste.syncorg.util.OrgUtils;
@@ -20,6 +21,8 @@ public class SSHSynchronizer extends Synchronizer {
     String absoluteFileDir;
     private Session session;
 
+    private ExternalSynchronizer dirSynchronizer;
+
     public SSHSynchronizer(Context context) {
         super(context);
         this.context = context;
@@ -31,6 +34,8 @@ public class SSHSynchronizer extends Synchronizer {
 
 
         if (PermissionManager.permissionGranted(context) == false) return;
+
+        this.dirSynchronizer = new ExternalSynchronizer(context, getAbsoluteFilesDir());
 
         File dir = new File(getAbsoluteFilesDir());
         if (!dir.exists()) {
@@ -82,10 +87,20 @@ public class SSHSynchronizer extends Synchronizer {
         if (PermissionManager.permissionGranted(context) == false) return new SyncResult();
 
         if (isCredentialsRequired()) return new SyncResult();
+
+        SyncResult dirRefreshResult = this.dirSynchronizer.synchronize();
+
         String folder = Synchronizer.getSynchronizer(context).getAbsoluteFilesDir();
         SyncResult pullResult = JGitWrapper.pull(context, folder);
 
         new JGitWrapper.PushTask(context).execute();
+
+        pullResult.changedFiles.addAll(dirRefreshResult.changedFiles);
+        pullResult.deletedFiles.addAll(dirRefreshResult.deletedFiles);
+        pullResult.newFiles.addAll(dirRefreshResult.newFiles);
+
+        Log.d("SyncOrg/SSHSynchronizer", pullResult.changedFiles.toString());
+
         return pullResult;
     }
 
