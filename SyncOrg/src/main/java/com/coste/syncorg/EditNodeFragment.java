@@ -36,6 +36,8 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
+import co.lujun.androidtagview.TagContainerLayout;
+
 public class EditNodeFragment extends Fragment {
     public static String NODE_ID = "node_id";
     public static String PARENT_ID = "parent_id";
@@ -43,7 +45,7 @@ public class EditNodeFragment extends Fragment {
     static Button schedule_date, deadline_date, schedule_time, deadline_time;
     static OrgNodeTimeDate timeDate;
     static private OrgNode node;
-    EditText title, content;
+    EditText title, content, tags;
     Context context;
     private int position = 0;
     private Button todo, priority;
@@ -88,6 +90,8 @@ public class EditNodeFragment extends Fragment {
 
         title = (EditText) getActivity().findViewById(R.id.title);
         content = (EditText) getActivity().findViewById(R.id.content);
+
+        tags = (EditText) rootView.findViewById(R.id.tags);
 
         Bundle bundle = getArguments();
         if (bundle != null) {
@@ -206,6 +210,10 @@ public class EditNodeFragment extends Fragment {
             }
         });
 
+        tags.setText(node.getTags().toString());
+
+        TagContainerLayout tagContainerLayout = (TagContainerLayout) rootView.findViewById(R.id.tcTags);
+        tagContainerLayout.setTags(node.getTags());
 
         setupTimeStampButtons();
 
