@@ -5,10 +5,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
-import com.coste.syncorg.util.ApplicationDiComponent;
-import com.coste.syncorg.util.DaggerApplicationDiComponent;
-
-import javax.inject.Inject;
+import com.coste.syncorg.util.di.ApplicationDiComponent;
+import com.coste.syncorg.util.di.DaggerApplicationDiComponent;
 
 public class SyncOrgApplication extends Application {
 

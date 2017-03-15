@@ -25,15 +25,19 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.coste.syncorg.dao.OrgNodeDao;
 import com.coste.syncorg.orgdata.OrgContract;
 import com.coste.syncorg.orgdata.OrgDatabase;
 import com.coste.syncorg.orgdata.OrgNode;
 import com.coste.syncorg.orgdata.OrgNodeTree;
 import com.coste.syncorg.orgdata.OrgProviderUtils;
+import com.coste.syncorg.orgdata.SyncOrgApplication;
 import com.coste.syncorg.util.OrgNodeNotFoundException;
 import com.coste.syncorg.util.TodoDialog;
 
 import java.util.NavigableMap;
+
+import javax.inject.Inject;
 
 /**
  * A fragment representing a single OrgNode detail screen.
@@ -52,6 +56,10 @@ public class OrgNodeDetailFragment extends Fragment {
     private OrgNode selectedNode;
     private View highlightedView = null;
     private ActionMode mActionMode = null;
+
+    @Inject
+    OrgNodeDao orgNodeDao;
+
     private ActionMode.Callback mActionModeCallback = new ActionMode.Callback() {
 
         // Called when the action mode is created; startActionMode() was called
@@ -101,6 +109,7 @@ public class OrgNodeDetailFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.resolver = getActivity().getContentResolver();
+        ((SyncOrgApplication) getActivity().getApplication()).getDiComponent().inject(this);
 
         if (getArguments().containsKey(OrgContract.NODE_ID)) {
             Bundle arguments = getArguments();
@@ -116,23 +125,7 @@ public class OrgNodeDetailFragment extends Fragment {
     private OrgNodeTree getTree() {
         // Handling of the TODO file
         if (nodeId == OrgContract.TODO_ID) {
-//                Cursor cursor = resolver.query(OrgContract.OrgData.CONTENT_URI,
-//                        OrgContract.OrgData.DEFAULT_COLUMNS, OrgContract.Todos.ISDONE + "=1",
-//                        null, OrgContract.OrgData.NAME_SORT);
-
-            String todoQuery = "SELECT " +
-                    OrgContract.formatColumns(
-                            OrgDatabase.Tables.ORGDATA,
-                            OrgContract.OrgData.DEFAULT_COLUMNS) +
-                    " FROM orgdata JOIN todos " +
-                    " ON todos.name = orgdata.todo WHERE todos.isdone=0";
-
-
-            Cursor cursor = OrgDatabase.getInstance().getReadableDatabase().rawQuery(todoQuery, null);
-
-            OrgNodeTree tree = new OrgNodeTree(OrgProviderUtils.orgDataCursorToArrayList(cursor));
-            if (cursor != null) cursor.close();
-            return tree;
+            return new OrgNodeTree(orgNodeDao.findTodoNodes());
         } else {
             try {
                 return new OrgNodeTree(new OrgNode(nodeId, resolver), resolver);

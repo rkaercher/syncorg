@@ -1,9 +1,10 @@
-package com.coste.syncorg.util;
+package com.coste.syncorg.util.di;
 
 
 import android.app.Activity;
 
 import com.coste.syncorg.AgendaFragment;
+import com.coste.syncorg.OrgNodeDetailFragment;
 import com.coste.syncorg.gui.filter.FilterActivity;
 import com.coste.syncorg.util.di.ApplicationModule;
 import com.coste.syncorg.orgdata.SyncOrgApplication;
@@ -20,4 +21,6 @@ public interface ApplicationDiComponent {
     void inject(FilterActivity activity);
 
     void inject(AgendaFragment fragment);
+
+    void inject(OrgNodeDetailFragment fragment);
 }

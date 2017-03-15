@@ -23,6 +23,8 @@ import butterknife.ButterKnife;
 
 public class FilterActivity extends AppCompatActivity {
 
+    public static final String PARAM_FILTER_TYPE = "filterType";
+
 
     @Inject
     FilterDao filterDao;
@@ -50,18 +52,23 @@ public class FilterActivity extends AppCompatActivity {
 
         setSupportActionBar(toolbar);
 
+        NodeFilter.FilterType filterType = (NodeFilter.FilterType) getIntent().getSerializableExtra(PARAM_FILTER_TYPE);
+
         filterList.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         filterList.setItemsCanFocus(false);
 
-        final NodeFilter nodeFilter = filterDao.loadFilter(NodeFilter.FilterType.AGENDA);
+        final NodeFilter nodeFilter = filterDao.loadFilter(filterType);
         Set<Long> selectedIds = nodeFilter.getIncludedNodeIds();
 
         final FilterAdapter adapter = new FilterAdapter(this, R.layout.filter_item, OrgProviderUtils.getFiles(getContentResolver()), selectedIds);
         filterList.setAdapter(adapter);
 
-        setTitle("Select files");
 
-        filterList.getCheckedItemCount();
+        if (filterType.equals(NodeFilter.FilterType.AGENDA)) {
+            setTitle("Select files for Agenda");
+        } else {
+            setTitle("Select files for TODO");
+        }
 
         okButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -82,5 +89,6 @@ public class FilterActivity extends AppCompatActivity {
             }
         });
     }
+
 
 }

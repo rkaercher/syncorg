@@ -12,6 +12,7 @@ import com.coste.syncorg.util.OrgFileNotFoundException;
 import com.coste.syncorg.util.OrgNodeNotFoundException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 
 public class OrgNode {
@@ -24,11 +25,11 @@ public class OrgNode {
     public String priority = ""; // The priority tag
     public String todo = "";    // The TODO state
     public String tags = "";
-    public String tags_inherited = "";
+    String tags_inherited = "";
     public String name = "";
     // The ordering of the same level siblings
     public int position = 0;
-    OrgNodeTimeDate deadline, scheduled;
+    private OrgNodeTimeDate deadline, scheduled;
     // The payload is a string containing the raw string corresponding to this mode
     private String payload = "";
     private OrgNodePayload orgNodePayload = null;
@@ -49,6 +50,20 @@ public class OrgNode {
         this.scheduled = node.scheduled;
         this.deadline = node.deadline;
         setPayload(node.getPayload());
+    }
+
+    public OrgNode(long id, long parentId, long fileId, long level, String priority, String todo, String tags, String tags_inherited, String name, int position, String payload) {
+        this.id = id;
+        this.parentId = parentId;
+        this.fileId = fileId;
+        this.level = level;
+        this.priority = priority;
+        this.todo = todo;
+        this.tags = tags;
+        this.tags_inherited = tags_inherited;
+        this.name = name;
+        this.position = position;
+        this.payload = payload;
     }
 
     public OrgNode(long id, ContentResolver resolver) throws OrgNodeNotFoundException {
@@ -80,7 +95,7 @@ public class OrgNode {
         return false;
     }
 
-    void setTimestamps() {
+    private void setTimestamps() {
         deadline = new OrgNodeTimeDate(OrgNodeTimeDate.TYPE.Deadline, id);
         scheduled = new OrgNodeTimeDate(OrgNodeTimeDate.TYPE.Scheduled, id);
     }
@@ -149,7 +164,7 @@ public class OrgNode {
      *
      * @return the ArrayList<OrgNode> containing all nodes
      */
-    public ArrayList<OrgNode> getDescandants(ContentResolver resolver) {
+    private ArrayList<OrgNode> getDescandants(ContentResolver resolver) {
         ArrayList<OrgNode> result = new ArrayList<OrgNode>();
         result.add(this);
         for (OrgNode child : getChildren(resolver)) result.addAll(child.getDescandants(resolver));
@@ -200,8 +215,7 @@ public class OrgNode {
 
         String[] split = tags.split("\\:");
 
-        for (String tag : split)
-            result.add(tag);
+        Collections.addAll(result, split);
 
         if (tags.endsWith(":"))
             result.add("");
@@ -209,11 +223,11 @@ public class OrgNode {
         return result;
     }
 
-    public ArrayList<OrgNode> getChildren(ContentResolver resolver) {
+    ArrayList<OrgNode> getChildren(ContentResolver resolver) {
         return OrgProviderUtils.getOrgNodeChildren(id, resolver);
     }
 
-    public ArrayList<String> getChildrenStringArray(ContentResolver resolver) {
+    private ArrayList<String> getChildrenStringArray(ContentResolver resolver) {
         ArrayList<String> result = new ArrayList<String>();
         ArrayList<OrgNode> children = getChildren(resolver);
 
@@ -244,7 +258,7 @@ public class OrgNode {
         return childCount > 0;
     }
 
-    public OrgNode getParent(ContentResolver resolver) throws OrgNodeNotFoundException {
+    private OrgNode getParent(ContentResolver resolver) throws OrgNodeNotFoundException {
         Cursor cursor = resolver.query(OrgData.buildIdUri(this.parentId),
                 OrgData.DEFAULT_COLUMNS, null, null, null);
         OrgNode parent = new OrgNode(cursor);
@@ -262,7 +276,7 @@ public class OrgNode {
         }
     }
 
-    public ArrayList<OrgNode> getSiblings(ContentResolver resolver) {
+    private ArrayList<OrgNode> getSiblings(ContentResolver resolver) {
         try {
             OrgNode parent = getParent(resolver);
             return parent.getChildren(resolver);
@@ -330,7 +344,6 @@ public class OrgNode {
                 scheduled = date;
                 break;
         }
-        return;
     }
 
     public OrgNodePayload getOrgNodePayload() {
@@ -344,7 +357,7 @@ public class OrgNode {
      * @param c: The characted used for the padding
      * @return
      */
-    public String getLevelPadding(char c) {
+    private String getLevelPadding(char c) {
         String result = "";
         if (level > 0) for (int i = 0; i < level; i++) result += c;
         result += " ";

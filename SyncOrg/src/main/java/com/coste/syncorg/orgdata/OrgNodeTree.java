@@ -5,6 +5,7 @@ import android.content.ContentResolver;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.NavigableMap;
 import java.util.Stack;
 import java.util.TreeMap;
@@ -47,11 +48,10 @@ public class OrgNodeTree {
     }
 
     /**
-     * Create a flat tree from an ArrayList
+     * Create a flat tree from a List
      *
-     * @param arrayList
      */
-    public OrgNodeTree(ArrayList<OrgNode> arrayList) {
+    public OrgNodeTree(List<OrgNode> arrayList) {
         this((OrgNode) null);
         for (OrgNode node : arrayList) children.add(new OrgNodeTree(node));
     }

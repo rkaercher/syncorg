@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 public class OrgNodeTimeDate {
     private static final String timestampPattern = "<((\\d{4})-(\\d{1,2})-(\\d{1,2}))(?:[^\\d]*)"
             + "((\\d{1,2})\\:(\\d{2}))?(-((\\d{1,2})\\:(\\d{2})))?[^>]*>";
-    // Trick for the initialization of a static map
     private static final Map<TYPE, Pattern> patterns;
 
     static {
@@ -38,28 +37,19 @@ public class OrgNodeTimeDate {
     public int dayOfMonth = -1;
     public int startTimeOfDay = -1;
     public int startMinute = -1;
-    public int endTimeOfDay = -1;
-    public int endMinute = -1;
-    public int matchStart = -1, matchEnd = -1;
+    private int endTimeOfDay = -1;
+    private int endMinute = -1;
+    int matchStart = -1, matchEnd = -1;
 
-    public OrgNodeTimeDate(TYPE type) {
+    private Calendar date;
+
+    OrgNodeTimeDate(TYPE type) {
         this.type = type;
     }
 
-    public OrgNodeTimeDate(TYPE type, String line) {
+    OrgNodeTimeDate(TYPE type, String line) {
         this.type = type;
         parseDate(line);
-    }
-
-
-    public OrgNodeTimeDate(TYPE type, int day, int month, int year) {
-        this(type);
-        setDate(day, month, year);
-    }
-
-    public OrgNodeTimeDate(TYPE type, int day, int month, int year, int startTimeOfDay, int startMinute) {
-        this(type, day, month, year);
-        setTime(startTimeOfDay, startMinute);
     }
 
     public OrgNodeTimeDate(long epochTimeInSec) {
@@ -72,7 +62,7 @@ public class OrgNodeTimeDate {
      * @param type
      * @param nodeId The OrgNode ID associated with this timestamp
      */
-    public OrgNodeTimeDate(TYPE type, long nodeId) {
+    OrgNodeTimeDate(TYPE type, long nodeId) {
 
         String todoQuery = "SELECT " +
                 OrgContract.formatColumns(
@@ -89,7 +79,7 @@ public class OrgNodeTimeDate {
         set(cursor);
     }
 
-    public static String typeToFormated(TYPE type) {
+    private static String typeToFormated(TYPE type) {
         switch (type) {
             case Scheduled:
                 return "SCHEDULED: ";
@@ -102,7 +92,7 @@ public class OrgNodeTimeDate {
         }
     }
 
-    public static String formatDate(TYPE type, String timestamp) {
+    private static String formatDate(TYPE type, String timestamp) {
         if (TextUtils.isEmpty(timestamp))
             return "";
         else {
@@ -110,7 +100,7 @@ public class OrgNodeTimeDate {
         }
     }
 
-    static public Pattern getTimestampMatcher(OrgNodeTimeDate.TYPE type) {
+    static Pattern getTimestampMatcher(OrgNodeTimeDate.TYPE type) {
         final String timestampPattern = "<([^>]+)(\\d\\d:\\d\\d)>"; // + "(?:\\s*--\\s*<([^>]+)>)?"; for ranged date
 //		final String timestampLookbehind = "\\s*(?<!(?:SCHEDULED:|DEADLINE:)\\s?)";
 
@@ -153,7 +143,7 @@ public class OrgNodeTimeDate {
      * @param epochTimeInSec
      * @param allDay
      */
-    void setEpochTime(long epochTimeInSec, boolean allDay) {
+    private void setEpochTime(long epochTimeInSec, boolean allDay) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(epochTimeInSec * 1000L);
         year = calendar.get(Calendar.YEAR);
@@ -165,7 +155,7 @@ public class OrgNodeTimeDate {
         }
     }
 
-    public void setDate(int day, int month, int year) {
+    private void setDate(int day, int month, int year) {
         this.dayOfMonth = day;
         this.monthOfYear = month;
         this.year = year;
@@ -183,7 +173,7 @@ public class OrgNodeTimeDate {
         this.dayOfMonth = c.get(Calendar.DAY_OF_MONTH);
     }
 
-    public void parseDate(String line) {
+    private void parseDate(String line) {
         if (line == null)
             return;
 
@@ -219,7 +209,7 @@ public class OrgNodeTimeDate {
         return String.format("%02d:%02d", startTimeOfDay, startMinute);
     }
 
-    public String getTimeDate() {
+    private String getTimeDate() {
         String date = getDate();
         String time = getTime();
         if (time.equals("")) return date;
@@ -232,7 +222,7 @@ public class OrgNodeTimeDate {
         return String.format("%02d:%02d", startTimeOfDay, startMinute);
     }
 
-    public String getEndTime() {
+    private String getEndTime() {
         return String.format("%02d:%02d", endTimeOfDay, endMinute);
     }
 
@@ -255,7 +245,7 @@ public class OrgNodeTimeDate {
      *
      * @return
      */
-    public long isAllDay() {
+    long isAllDay() {
         return (startTimeOfDay < 0 || startMinute < 0) ? 1 : 0;
     }
 
@@ -272,12 +262,12 @@ public class OrgNodeTimeDate {
 
     }
 
-    public String toFormatedString() {
+    String toFormatedString() {
         return formatDate(type, getTimeDate());
     }
 
     private String getStartTimeFormated() {
-        String time = getStartTime().toString();
+        String time = getStartTime();
 
         if (startTimeOfDay == -1
                 || startMinute == -1 || TextUtils.isEmpty(time))
@@ -286,15 +276,6 @@ public class OrgNodeTimeDate {
             return " " + time;
     }
 
-    private String getEndTimeFormated() {
-        String time = getEndTime().toString();
-
-        if (endTimeOfDay == -1
-                || endMinute == -1 || TextUtils.isEmpty(time))
-            return "";
-        else
-            return "-" + time;
-    }
 
     public void update(Context context, long nodeId, long fileId) {
         deleteTimestamp(context, nodeId, Timestamps.TYPE + "=" + type.ordinal());
@@ -321,7 +302,7 @@ public class OrgNodeTimeDate {
      * @param date
      * @return
      */
-    public boolean isBefore(OrgNodeTimeDate date) {
+    private boolean isBefore(OrgNodeTimeDate date) {
         return this.year < date.year ||
                 (this.year == date.year && (this.monthOfYear < date.monthOfYear ||
                         (this.monthOfYear == date.monthOfYear && this.dayOfMonth < date.dayOfMonth)));

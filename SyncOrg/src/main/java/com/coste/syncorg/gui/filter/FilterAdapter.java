@@ -31,7 +31,7 @@ class FilterAdapter extends ArrayAdapter<OrgFile> implements CompoundButton.OnCh
         } else {
             selectedIds.remove(compoundButton.getTag());
         }
-        context.setTitle("changed" + compoundButton.getTag());
+       // context.setTitle("changed" + compoundButton.getTag());
     }
 
     private static class ViewHolder {

@@ -153,9 +153,6 @@ public class OrgProvider extends ContentProvider {
                 return builder.table(Tables.TIMESTAMPS);
             case TIMESTAMPS_ID:
                 return builder.table(Tables.TIMESTAMPS).where(Timestamps.NODE_ID + "=?", Timestamps.getId(uri));
-            case TIMESTAMPS_FILTERED:
-                return builder.table(Tables.TIMESTAMPS).rawQuerySql(String.format("SELECT ts.%s, ts.%s, ts.%s FROM %s ts, %s n WHERE n.file_id IN ? AND ts.node_id = n._id",
-                        Timestamps.NODE_ID, Timestamps.TIMESTAMP, Timestamps.TYPE, Tables.TIMESTAMPS, Tables.ORGDATA));
             case SEARCH:
                 final String search = Search.getSearchTerm(uri);
                 return builder.table(Tables.ORGDATA).where("name LIKE %?%", search);

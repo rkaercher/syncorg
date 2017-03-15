@@ -35,6 +35,9 @@ import com.coste.syncorg.util.PreferenceUtils;
 
 import java.io.File;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 
 /**
  * An activity representing a list of OrgNodes. This activity
@@ -59,10 +62,14 @@ public class MainActivity extends AppCompatActivity {
     private MenuItem synchronizerMenuItem;
     private RecyclerView recyclerView;
 
+    @BindView(R.id.fab)
+    FloatingActionButton addFileButton;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
+        ButterKnife.bind(this);
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -94,8 +101,7 @@ public class MainActivity extends AppCompatActivity {
         registerReceiver(this.syncReceiver, new IntentFilter(
                 Synchronizer.SYNC_UPDATE));
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        if (fab != null) fab.setOnClickListener(new View.OnClickListener() {
+        if (addFileButton != null) addFileButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);

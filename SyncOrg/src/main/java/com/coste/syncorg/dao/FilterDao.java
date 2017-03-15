@@ -77,9 +77,11 @@ public class FilterDao {
 
         cursor = db.getReadableDatabase().query(FilterEntryTable.name, new String[]{FilterEntryTable.FIELD_FILE_ID}, fieldSelection(FilterEntryTable.FIELD_FILTER_ID), new String[]{filterId.toString()}, null, null, null);
 
-        while (!cursor.isLast()) {
-            cursor.moveToNext();
-            includedIds.add(cursor.getLong(0));
+        if (cursor.getCount() > 0) {
+            while (!cursor.isLast()) {
+                cursor.moveToNext();
+                includedIds.add(cursor.getLong(0));
+            }
         }
         cursor.close();
 

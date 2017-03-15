@@ -14,9 +14,13 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 
 import com.coste.syncorg.gui.filter.FilterActivity;
+import com.coste.syncorg.orgdata.NodeFilter;
 import com.coste.syncorg.orgdata.OrgContract;
 import com.coste.syncorg.orgdata.OrgNode;
 import com.coste.syncorg.util.OrgNodeNotFoundException;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 /**
  * An activity representing a single OrgNode detail screen. This
@@ -27,11 +31,14 @@ import com.coste.syncorg.util.OrgNodeNotFoundException;
 public class OrgNodeDetailActivity extends AppCompatActivity {
 
 
+    @BindView(R.id.detail_toolbar)
+    Toolbar toolbar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_orgnode_detail);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.detail_toolbar);
+        ButterKnife.bind(this);
         setSupportActionBar(toolbar);
 
         // Show the Up button in the action bar.
@@ -68,20 +75,28 @@ public class OrgNodeDetailActivity extends AppCompatActivity {
                     .commit();
 
             if (actionBar != null) {
-                if (nodeId == OrgContract.TODO_ID)
-                    actionBar.setTitle(getResources().getString(R.string.menu_todos));
-                else if (isAgendaSpecialNode(nodeId)) {
-                    actionBar.setTitle(getResources().getString(R.string.menu_agenda));
-                } else {
-                    try {
-                        OrgNode node = new OrgNode(nodeId, getContentResolver());
-                        actionBar.setTitle(node.name);
-                    } catch (OrgNodeNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                }
+                setActionBarTitle(actionBar, nodeId);
             }
         }
+    }
+
+    private void setActionBarTitle(ActionBar actionBar, Long nodeId) {
+        if (isTodoSpecialNode(nodeId))
+            actionBar.setTitle(getResources().getString(R.string.menu_todos));
+        else if (isAgendaSpecialNode(nodeId)) {
+            actionBar.setTitle(getResources().getString(R.string.menu_agenda));
+        } else {
+            try {
+                OrgNode node = new OrgNode(nodeId, getContentResolver());
+                actionBar.setTitle(node.name);
+            } catch (OrgNodeNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private boolean isTodoSpecialNode(Long nodeId) {
+        return nodeId == OrgContract.TODO_ID;
     }
 
     private boolean isAgendaSpecialNode(Long nodeId) {
@@ -106,8 +121,8 @@ public class OrgNodeDetailActivity extends AppCompatActivity {
 
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        if (isAgendaSpecialNode(getNodeId())) {
+    public boolean onCreateOptionsMenu(Menu menu) { //TODO refactor
+        if (isAgendaSpecialNode(getNodeId()) || isTodoSpecialNode(getNodeId())) {
             MenuInflater inflater = getMenuInflater();
             inflater.inflate(R.menu.agenda_list, menu);
             return true;
@@ -143,8 +158,8 @@ public class OrgNodeDetailActivity extends AppCompatActivity {
                 NavUtils.navigateUpTo(this, new Intent(this, MainActivity.class));
                 return true;
             case R.id.menu_filter:
-                //showUpgradePopup();
                 Intent intent = new Intent(this, FilterActivity.class);
+                intent.putExtra(FilterActivity.PARAM_FILTER_TYPE, isAgendaSpecialNode(getNodeId()) ? NodeFilter.FilterType.AGENDA : NodeFilter.FilterType.TODO);
                 startActivity(intent);
                 return true;
 

@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 import static com.coste.syncorg.util.FileUtils.getMinimumPadding;
 
-public class OrgNodePayload {
+class OrgNodePayload {
     private StringBuilder payload = new StringBuilder();
 
     /**
@@ -25,7 +25,7 @@ public class OrgNodePayload {
 
     private HashMap<OrgNodeTimeDate.TYPE, String> cachedTimestamps;
 
-    public OrgNodePayload(String payload) {
+    OrgNodePayload(String payload) {
         if (payload == null)
             payload = "";
 
@@ -72,7 +72,7 @@ public class OrgNodePayload {
         this.cleanPayload = null;
     }
 
-    public String getCleanedPayload() {
+    String getCleanedPayload() {
         cleanPayload();
         return this.cleanPayload.toString();
     }
@@ -104,7 +104,7 @@ public class OrgNodePayload {
         return this.id;
     }
 
-    public HashMap getPropertiesPayload() {
+    HashMap getPropertiesPayload() {
         HashMap propsHashMap = new HashMap();
 
         if (this.payload != null) {
@@ -141,7 +141,7 @@ public class OrgNodePayload {
         trimEachLine();
     }
 
-    public String getTimestamp(OrgNodeTimeDate.TYPE type) {
+    private String getTimestamp(OrgNodeTimeDate.TYPE type) {
         String result = cachedTimestamps.get(type);
         if (result != null) return result; // return cached result if any
 
@@ -152,7 +152,7 @@ public class OrgNodePayload {
         return cachedTimestamps.get(type);
     }
 
-    public void insertOrReplaceDate(OrgNodeTimeDate date) {
+    void insertOrReplaceDate(OrgNodeTimeDate date) {
         Matcher matcher = OrgNodeTimeDate.getTimestampMatcher(date.type).matcher(payload);
 
         String formatedDate = date.toFormatedString();
@@ -219,7 +219,7 @@ public class OrgNodePayload {
         return fileProperties;
     }
 
-    public String getProperty(String property) {
+    String getProperty(String property) {
         final Pattern propertiesLine = Pattern.compile(":" + property + ":([^\\n]+)");
         Matcher propm = propertiesLine.matcher(this.payload);
 
