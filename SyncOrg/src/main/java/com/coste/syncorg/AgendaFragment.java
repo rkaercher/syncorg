@@ -20,10 +20,12 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.coste.syncorg.dao.AgendaDao;
 import com.coste.syncorg.orgdata.OrgContract.Timestamps;
 import com.coste.syncorg.orgdata.OrgNode;
 import com.coste.syncorg.orgdata.OrgNodeTimeDate;
 import com.coste.syncorg.orgdata.OrgProviderUtils;
+import com.coste.syncorg.orgdata.SyncOrgApplication;
 import com.coste.syncorg.util.OrgNodeNotFoundException;
 
 import java.util.ArrayList;
@@ -32,6 +34,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.TreeMap;
+
+import javax.inject.Inject;
 
 
 /**
@@ -47,7 +51,10 @@ public class AgendaFragment extends Fragment {
     ArrayList<AgendaItem> nodesList;
     ArrayList<OrgNodeTimeDate> daysList;
     ArrayList<PositionHelper> items;
-    private ContentResolver resolver;
+
+    @Inject
+    AgendaDao agendaDao;
+
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
@@ -63,7 +70,9 @@ public class AgendaFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        this.resolver = getActivity().getContentResolver();
+        ContentResolver resolver = getActivity().getContentResolver();
+
+        ((SyncOrgApplication) getActivity().getApplication()).getDiComponent().inject(this);
 
         SharedPreferences appPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         boolean calendarShowDone = appPreferences.getBoolean("calendarShowDone", false);

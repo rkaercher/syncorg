@@ -1,14 +1,19 @@
 package com.coste.syncorg;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 
+import com.coste.syncorg.gui.filter.FilterActivity;
 import com.coste.syncorg.orgdata.OrgContract;
 import com.coste.syncorg.orgdata.OrgNode;
 import com.coste.syncorg.util.OrgNodeNotFoundException;
@@ -48,13 +53,13 @@ public class OrgNodeDetailActivity extends AppCompatActivity {
             // Create the detail fragment and add it to the activity
             // using a fragment transaction.
             Bundle arguments = new Bundle();
-            Long nodeId = getIntent().getLongExtra(OrgContract.NODE_ID, -1);
+            Long nodeId = getNodeId();
 
             arguments.putLong(OrgContract.NODE_ID, nodeId);
             arguments.putLong(OrgContract.POSITION, getIntent().getLongExtra(OrgContract.POSITION, -1));
             Fragment fragment;
 
-            if (nodeId == OrgContract.AGENDA_ID) fragment = new AgendaFragment();
+            if (isAgendaSpecialNode(nodeId)) fragment = new AgendaFragment();
             else fragment = new OrgNodeDetailFragment();
 
             fragment.setArguments(arguments);
@@ -65,7 +70,7 @@ public class OrgNodeDetailActivity extends AppCompatActivity {
             if (actionBar != null) {
                 if (nodeId == OrgContract.TODO_ID)
                     actionBar.setTitle(getResources().getString(R.string.menu_todos));
-                else if (nodeId == OrgContract.AGENDA_ID) {
+                else if (isAgendaSpecialNode(nodeId)) {
                     actionBar.setTitle(getResources().getString(R.string.menu_agenda));
                 } else {
                     try {
@@ -77,6 +82,14 @@ public class OrgNodeDetailActivity extends AppCompatActivity {
                 }
             }
         }
+    }
+
+    private boolean isAgendaSpecialNode(Long nodeId) {
+        return nodeId == OrgContract.AGENDA_ID;
+    }
+
+    private long getNodeId() {
+        return getIntent().getLongExtra(OrgContract.NODE_ID, -1);
     }
 
     @Override
@@ -91,14 +104,30 @@ public class OrgNodeDetailActivity extends AppCompatActivity {
         super.onBackPressed();  // optional depending on your needs
     }
 
-//
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        MenuInflater inflater = getMenuInflater();
-//        inflater.inflate(R.menu.detail_menu, menu);
-//
-//        return true;
-//    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        if (isAgendaSpecialNode(getNodeId())) {
+            MenuInflater inflater = getMenuInflater();
+            inflater.inflate(R.menu.agenda_list, menu);
+            return true;
+        }
+
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    private void showUpgradePopup() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Magic happened!");
+        builder.setCancelable(false);
+        builder.setPositiveButton(R.string.ok,
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.dismiss();
+                    }
+                });
+        builder.create().show();
+    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -112,6 +141,11 @@ public class OrgNodeDetailActivity extends AppCompatActivity {
                 // http://developer.android.com/design/patterns/navigation.html#up-vs-back
                 //
                 NavUtils.navigateUpTo(this, new Intent(this, MainActivity.class));
+                return true;
+            case R.id.menu_filter:
+                //showUpgradePopup();
+                Intent intent = new Intent(this, FilterActivity.class);
+                startActivity(intent);
                 return true;
 
 //            case R.id.delete_node_button:

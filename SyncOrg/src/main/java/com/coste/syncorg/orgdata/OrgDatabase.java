@@ -7,15 +7,20 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 
 import com.coste.syncorg.orgdata.OrgContract.OrgData;
+import com.coste.syncorg.orgdata.table.FilterEntryTable;
+import com.coste.syncorg.orgdata.table.FilterTable;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Singleton;
+
 import static com.coste.syncorg.orgdata.OrgDatabase.Tables.ALL_TABLES;
 
+@Singleton
 public class OrgDatabase extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "SyncOrg.db";
-    private static final int DATABASE_VERSION = 7;
+    private static final int DATABASE_VERSION = 8;
     private static OrgDatabase mInstance = null;
     private SQLiteStatement orgdataInsertStatement;
     private SQLiteStatement addPayloadStatement;
@@ -43,12 +48,7 @@ public class OrgDatabase extends SQLiteOpenHelper {
                 .compileStatement("INSERT INTO " + Tables.TIMESTAMPS + " (timestamp, file_id, node_id, type, all_day) VALUES (?,?,?,?,?) ");
     }
 
-    /**
-     * Open the database at startup
-     *
-     * @param context
-     */
-    static public void startDB(Context context) {
+    static void startDB(Context context) {
         mInstance = new OrgDatabase(context);
     }
 
@@ -102,6 +102,9 @@ public class OrgDatabase extends SQLiteOpenHelper {
                 + "node_id integer,"
                 + "all_day integer)");
 
+        db.execSQL(FilterTable.getCreateDDL());
+        db.execSQL(FilterEntryTable.getCreateDDL());
+
         ContentValues values = new ContentValues();
         values.put("_id", "0");
         values.put("todogroup", "0");
@@ -128,10 +131,14 @@ public class OrgDatabase extends SQLiteOpenHelper {
                     db.delete(table, null, null);
                 }
                 onCreate(db);
+                break;
+            case 8:
+                db.execSQL(FilterTable.getCreateDDL());
+                db.execSQL(FilterEntryTable.getCreateDDL());
         }
     }
 
-    public long fastInsertNode(OrgNode node) {
+    long fastInsertNode(OrgNode node) {
         orgdataInsertStatement.bindString(1, node.name);
         orgdataInsertStatement.bindString(2, node.todo);
         orgdataInsertStatement.bindString(3, node.priority);
@@ -145,7 +152,7 @@ public class OrgDatabase extends SQLiteOpenHelper {
         return orgdataInsertStatement.executeInsert();
     }
 
-    public void fastInsertTimestamp(Long id, Long fileId, final HashMap<OrgNodeTimeDate.TYPE, OrgNodeTimeDate> timestamps) {
+    void fastInsertTimestamp(Long id, Long fileId, final HashMap<OrgNodeTimeDate.TYPE, OrgNodeTimeDate> timestamps) {
         for (Map.Entry<OrgNodeTimeDate.TYPE, OrgNodeTimeDate> entry : timestamps.entrySet()) {
             OrgNodeTimeDate timeDate = entry.getValue();
             if (timeDate.getEpochTime() < 0) continue;
@@ -159,18 +166,18 @@ public class OrgDatabase extends SQLiteOpenHelper {
         }
     }
 
-    public void fastInsertNodePayload(Long id, final String payload) {
+    void fastInsertNodePayload(Long id, final String payload) {
 
         addPayloadStatement.bindString(1, payload);
         addPayloadStatement.bindLong(2, id);
         addPayloadStatement.execute();
     }
 
-    public void beginTransaction() {
+    void beginTransaction() {
         getWritableDatabase().beginTransaction();
     }
 
-    public void endTransaction() {
+    void endTransaction() {
         getWritableDatabase().setTransactionSuccessful();
         getWritableDatabase().endTransaction();
     }
@@ -182,6 +189,7 @@ public class OrgDatabase extends SQLiteOpenHelper {
         String TAGS = "tags";
         String TODOS = "todos";
         String ORGDATA = "orgdata";
+
         String[] ALL_TABLES = {TIMESTAMPS, FILES, PRIORITIES, TAGS, TODOS, ORGDATA};
     }
 

@@ -332,5 +332,6 @@
     <string name="write_permission_denied_warning_title">Warning: Storage permission denied</string>
     <string name="write_permission_denied_warning_content">The "Storage" permission is mandatory to write notes on disk. When denied, the app can not run correctly.
         Please activate it in: Android settings -> Apps -> SyncOrg -> Permissions.</string>
+    <string name="title_activity_filter">FilterActivityT</string>
 
 </resources>

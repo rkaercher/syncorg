@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
+import android.support.annotation.NonNull;
 
 import com.coste.syncorg.orgdata.OrgContract.Files;
 import com.coste.syncorg.orgdata.OrgContract.OrgData;
@@ -31,6 +32,9 @@ public class OrgProvider extends ContentProvider {
     private static final int SEARCH = 700;
     private static final int TIMESTAMPS = 800;
     private static final int TIMESTAMPS_ID = 801;
+
+    private static final int TIMESTAMPS_FILTERED = 802;
+
     private static final UriMatcher uriMatcher = buildUriMatcher();
 
     private static UriMatcher buildUriMatcher() {
@@ -52,7 +56,7 @@ public class OrgProvider extends ContentProvider {
 
         uriMatcher.addURI(AUTHORITY, Tables.TIMESTAMPS, TIMESTAMPS);
         uriMatcher.addURI(AUTHORITY, Tables.TIMESTAMPS + "/*", TIMESTAMPS_ID);
-
+        uriMatcher.addURI(AUTHORITY, Tables.TIMESTAMPS + "/filter/*", TIMESTAMPS_FILTERED);
 
         return uriMatcher;
     }
@@ -64,7 +68,7 @@ public class OrgProvider extends ContentProvider {
 
 
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection,
+    public Cursor query(@NonNull Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
         final SQLiteDatabase db = OrgDatabase.getInstance().getReadableDatabase();
 
@@ -73,7 +77,7 @@ public class OrgProvider extends ContentProvider {
     }
 
     @Override
-    public Uri insert(Uri uri, ContentValues contentValues) {
+    public Uri insert(@NonNull Uri uri, ContentValues contentValues) {
         final String tableName = getTableNameFromUri(uri);
 
         if (contentValues == null)
@@ -98,7 +102,7 @@ public class OrgProvider extends ContentProvider {
 
 
     @Override
-    public int delete(Uri uri, String selection, String[] selectionArgs) {
+    public int delete(@NonNull Uri uri, String selection, String[] selectionArgs) {
         final SQLiteDatabase db = OrgDatabase.getInstance().getWritableDatabase();
         final SelectionBuilder builder = buildSelectionFromUri(uri);
         int count = builder.where(selection, selectionArgs).delete(db);
@@ -107,7 +111,7 @@ public class OrgProvider extends ContentProvider {
     }
 
     @Override
-    public int update(Uri uri, ContentValues values, String selection,
+    public int update(@NonNull Uri uri, ContentValues values, String selection,
                       String[] selectionArgs) {
         final SQLiteDatabase db = OrgDatabase.getInstance().getWritableDatabase();
         final SelectionBuilder builder = buildSelectionFromUri(uri);
@@ -117,7 +121,7 @@ public class OrgProvider extends ContentProvider {
     }
 
     @Override
-    public String getType(Uri uri) {
+    public String getType(@NonNull Uri uri) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -149,6 +153,9 @@ public class OrgProvider extends ContentProvider {
                 return builder.table(Tables.TIMESTAMPS);
             case TIMESTAMPS_ID:
                 return builder.table(Tables.TIMESTAMPS).where(Timestamps.NODE_ID + "=?", Timestamps.getId(uri));
+            case TIMESTAMPS_FILTERED:
+                return builder.table(Tables.TIMESTAMPS).rawQuerySql(String.format("SELECT ts.%s, ts.%s, ts.%s FROM %s ts, %s n WHERE n.file_id IN ? AND ts.node_id = n._id",
+                        Timestamps.NODE_ID, Timestamps.TIMESTAMP, Timestamps.TYPE, Tables.TIMESTAMPS, Tables.ORGDATA));
             case SEARCH:
                 final String search = Search.getSearchTerm(uri);
                 return builder.table(Tables.ORGDATA).where("name LIKE %?%", search);
@@ -158,7 +165,7 @@ public class OrgProvider extends ContentProvider {
     }
 
     private String getTableNameFromUri(Uri uri) {
-        String tableName = null;
+        String tableName;
 
         switch (uriMatcher.match(uri)) {
             case ORGDATA:
@@ -180,6 +187,9 @@ public class OrgProvider extends ContentProvider {
                 tableName = Tables.TIMESTAMPS;
                 break;
             case TIMESTAMPS_ID:
+                tableName = Tables.TIMESTAMPS;
+                break;
+            case TIMESTAMPS_FILTERED:
                 tableName = Tables.TIMESTAMPS;
                 break;
             default:

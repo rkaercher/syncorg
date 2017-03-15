@@ -4,15 +4,16 @@ apply plugin: 'maven'
 
 android {
     compileSdkVersion 24
-    buildToolsVersion "24.0.1"
+    buildToolsVersion '25.0.2'
 
     defaultConfig {
         applicationId "com.coste.syncorg"
-        minSdkVersion 17
+        minSdkVersion 21
         targetSdkVersion 24
         versionCode 11
         versionName "2.0.5.4"
     }
+
     useLibrary 'org.apache.http.legacy'
 }
 
@@ -20,10 +21,16 @@ repositories {
     maven { url 'http://guardian.github.com/maven/repo-releases' }
 }
 
+ext {
+    JUNIT_VERSION = '4.12'
+    DAGGER_VERSION = '2.4'
+    BUTTERKNIFE_VERSION = '8.4.0'
+}
+
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    testCompile 'junit:junit:4.12'
-    compile 'com.google.android.gms:play-services:10.0.1'
+
+    compile 'com.google.android.gms:play-services-drive:10.2.0'
     compile 'com.jcraft:jsch:0.1.50'
     compile 'com.android.support:appcompat-v7:24.0.0'
     compile 'com.android.support:support-v4:24.0.0'
@@ -31,13 +38,22 @@ dependencies {
     compile 'com.android.support:design:24.0.0'
     compile 'com.android.support:cardview-v7:24.0.0'
     compile 'org.eclipse.jgit:org.eclipse.jgit:2.1.0.201209190230-r'
-    compile ('co.lujun:androidtagview:1.0.6')
-    {
+    compile('co.lujun:androidtagview:1.0.6') {
         exclude group: 'com.android.support', module: 'appcompat-v7'
     }
-    // Required -- JUnit 4 framework
-    testCompile 'junit:junit:4.12'
-    // Optional -- Mockito framework
+
+    compile "com.google.dagger:dagger:$DAGGER_VERSION"
+
+    debugAnnotationProcessor "com.google.dagger:dagger-compiler:$DAGGER_VERSION"
+    annotationProcessor "com.google.dagger:dagger-compiler:$DAGGER_VERSION"
+    provided 'javax.annotation:jsr250-api:1.0'
+    compile 'javax.inject:javax.inject:1'
+
+    compile "com.jakewharton:butterknife:$BUTTERKNIFE_VERSION"
+    annotationProcessor "com.jakewharton:butterknife-compiler:$BUTTERKNIFE_VERSION"
+
+    testCompile "junit:junit:$JUNIT_VERSION"
+    testAnnotationProcessor "com.google.dagger:dagger-compiler:$DAGGER_VERSION"
     testCompile 'org.mockito:mockito-core:1.10.19'
 }
 

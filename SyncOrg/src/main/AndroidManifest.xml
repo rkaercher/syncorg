@@ -8,7 +8,6 @@
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
     <!-- TODO: look at this backup thing the above warning is talking about -->
     <application
         android:name=".orgdata.SyncOrgApplication"
@@ -25,7 +24,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_provider_paths" />
         </provider>
-
         <provider
             android:name=".orgdata.OrgProvider"
             android:authorities="com.coste.syncorg.orgdata.OrgProvider"
@@ -117,5 +115,8 @@
         <activity android:name=".directory_chooser.FolderPickerActivity" />
         <activity android:name=".services.PermissionManagerActivity" />
         <activity android:name="com.coste.google_drive.FolderPicker" />
+        <activity
+            android:name=".gui.filter.FilterActivity"/>
     </application>
+
 </manifest>
