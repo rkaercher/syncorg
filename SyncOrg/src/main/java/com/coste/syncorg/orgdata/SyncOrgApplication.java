@@ -8,6 +8,8 @@ import android.preference.PreferenceManager;
 import com.coste.syncorg.util.di.ApplicationDiComponent;
 import com.coste.syncorg.util.di.DaggerApplicationDiComponent;
 
+import net.danlew.android.joda.JodaTimeAndroid;
+
 public class SyncOrgApplication extends Application {
 
     protected ApplicationDiComponent diComponent;
@@ -22,14 +24,13 @@ public class SyncOrgApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        JodaTimeAndroid.init(this);
         OrgDatabase.startDB(this);
 
         diComponent = DaggerApplicationDiComponent.builder().build();
-       // diComponent.inject(this);
 
         instance = this;
         sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-
 
         OrgFileParser.startParser(this);
     }

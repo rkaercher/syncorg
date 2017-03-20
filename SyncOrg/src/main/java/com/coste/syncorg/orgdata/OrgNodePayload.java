@@ -153,7 +153,7 @@ class OrgNodePayload {
     }
 
     void insertOrReplaceDate(OrgNodeTimeDate date) {
-        Matcher matcher = OrgNodeTimeDate.getTimestampMatcher(date.type).matcher(payload);
+        Matcher matcher = OrgNodeTimeDate.getTimestampMatcher(date.getType()).matcher(payload);
 
         String formatedDate = date.toFormatedString();
 

@@ -8,9 +8,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.Toolbar;
 import android.text.format.DateFormat;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -21,7 +24,6 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TimePicker;
-import android.widget.Toast;
 
 import com.coste.syncorg.orgdata.OrgContract;
 import com.coste.syncorg.orgdata.OrgFile;
@@ -31,35 +33,69 @@ import com.coste.syncorg.util.FileUtils;
 import com.coste.syncorg.util.OrgNodeNotFoundException;
 import com.coste.syncorg.util.TodoDialog;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.List;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalTime;
 
+import java.util.ArrayList;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+import butterknife.Unbinder;
 import co.lujun.androidtagview.TagContainerLayout;
 
 public class EditNodeFragment extends Fragment {
-    public static String NODE_ID = "node_id";
-    public static String PARENT_ID = "parent_id";
-    static public long nodeId = -1, parentId = -1;
-    static Button schedule_date, deadline_date, schedule_time, deadline_time;
-    static OrgNodeTimeDate timeDate;
-    static private OrgNode node;
-    EditText title, content, tags;
+    private static final String SSTATE_SCHEDULED_DATE = "scheduled_date";
+    private static final String SSTATE_SCHEDULED_TIME = "scheduled_time";
+    private static final String SSTATE_DEADLINE_DATE = "deadline_date";
+    private static final String SSTATE_DEADLINE_TIME = "deadline_time";
+
+    private Unbinder unbinder;
+
+    static String NODE_ID = "node_id";
+    static String PARENT_ID = "parent_id";
+    static long nodeId = -1, parentId = -1;
+
+    @BindView(R.id.scheduled_date)
+    Button schedule_date;
+
+    @BindView(R.id.deadline_date)
+    Button deadline_date;
+
+    @BindView(R.id.scheduled_time)
+    Button schedule_time;
+
+    @BindView(R.id.deadline_time)
+    Button deadline_time;
+
+    private OrgNode node;
+
+
+    @BindView(R.id.tcTags)
+    TagContainerLayout tagContainerLayout;
+
     Context context;
     private int position = 0;
-    private Button todo, priority;
 
-    static private void setupTimeStampButtons() {
-        String scheduleText = node.getScheduled().getDate();
-        String deadlineText = node.getDeadline().getDate();
-        if (scheduleText.length() > 0) schedule_date.setText(scheduleText);
-        if (deadlineText.length() > 0) deadline_date.setText(deadlineText);
 
-        String scheduleTimeText = node.getScheduled().getStartTime();
-        String deadlineTimeText = node.getDeadline().getStartTime();
-        if (scheduleTimeText.length() > 0) schedule_time.setText(scheduleTimeText);
-        if (deadlineTimeText.length() > 0) deadline_time.setText(deadlineTimeText);
+    @BindView(R.id.todo)
+    Button btnTodo;
+    @BindView(R.id.priority)
+    Button btnPriority;
+
+    @BindView(R.id.title)
+    EditText title;
+
+    @BindView(R.id.content)
+    EditText content;
+
+    private void setupTimeStampButtons() {
+        OrgNodeTimeDate scheduled = node.getScheduled();
+        OrgNodeTimeDate deadline = node.getDeadline();
+        if (scheduled.getDate() != null) schedule_date.setText(scheduled.getDateString());
+        if (deadline.getDate() != null) deadline_date.setText(deadline.getDateString());
+        if (scheduled.getTime() != null) schedule_time.setText(scheduled.getTimeString());
+        if (deadline.getTime() != null) deadline_time.setText(deadline.getTimeString());
     }
 
     static public void createEditNodeFragment(int id, int parentId, int siblingPosition, Context context) {
@@ -77,21 +113,10 @@ public class EditNodeFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         final View rootView = inflater.inflate(R.layout.edit_node_entry, container, false);
+        unbinder = ButterKnife.bind(this, rootView);
+
+
         context = getContext();
-
-
-        todo = (Button) rootView.findViewById(R.id.todo);
-        priority = (Button) rootView.findViewById(R.id.priority);
-        schedule_date = (Button) rootView.findViewById(R.id.scheduled_date);
-        deadline_date = (Button) rootView.findViewById(R.id.deadline_date);
-
-        schedule_time = (Button) rootView.findViewById(R.id.scheduled_time);
-        deadline_time = (Button) rootView.findViewById(R.id.deadline_time);
-
-        title = (EditText) getActivity().findViewById(R.id.title);
-        content = (EditText) getActivity().findViewById(R.id.content);
-
-        tags = (EditText) rootView.findViewById(R.id.tags);
 
         Bundle bundle = getArguments();
         if (bundle != null) {
@@ -119,34 +144,27 @@ public class EditNodeFragment extends Fragment {
          * (like screen rotation or call)
          */
         if (savedInstanceState != null) {
-            node.getScheduled().year = (int) savedInstanceState.getLong("year_schedule");
-            node.getScheduled().monthOfYear = (int) savedInstanceState.getLong("month_schedule");
-            node.getScheduled().dayOfMonth = (int) savedInstanceState.getLong("day_schedule");
-            node.getScheduled().startTimeOfDay = (int) savedInstanceState.getLong("hour_schedule");
-            node.getScheduled().startMinute = (int) savedInstanceState.getLong("minute_schedule");
+            node.getScheduled().setDate((LocalDate) savedInstanceState.getSerializable(SSTATE_SCHEDULED_DATE));
+            node.getScheduled().setTime((LocalTime) savedInstanceState.getSerializable(SSTATE_SCHEDULED_TIME));
+            node.getDeadline().setDate((LocalDate) savedInstanceState.getSerializable(SSTATE_DEADLINE_DATE));
+            node.getDeadline().setTime((LocalTime) savedInstanceState.getSerializable(SSTATE_DEADLINE_TIME));
 
-            node.getDeadline().year = (int) savedInstanceState.getLong("year_deadline");
-            node.getDeadline().monthOfYear = (int) savedInstanceState.getLong("month_deadline");
-            node.getDeadline().dayOfMonth = (int) savedInstanceState.getLong("day_deadline");
-            node.getDeadline().startTimeOfDay = (int) savedInstanceState.getLong("hour_deadline");
-            node.getDeadline().startMinute = (int) savedInstanceState.getLong("minute_deadline");
-
-            node.todo = savedInstanceState.getString("todo");
-            node.priority = savedInstanceState.getString("priority");
+            node.todo = savedInstanceState.getString("btnTodo");
+            node.priority = savedInstanceState.getString("btnPriority");
         }
 
-        TodoDialog.setupTodoButton(getContext(), node, todo, false);
+        TodoDialog.setupTodoButton(getContext(), node, btnTodo, false);
 
 
-        todo.setOnClickListener(new View.OnClickListener() {
+        btnTodo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                new TodoDialog(getContext(), node, todo, false);
+                new TodoDialog(getContext(), node, btnTodo, false);
             }
         });
 
-        priority.setText(node.priority);
-        priority.setOnClickListener(new View.OnClickListener() {
+        btnPriority.setText(node.priority);
+        btnPriority.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 showPriorityDialog();
@@ -177,49 +195,47 @@ public class EditNodeFragment extends Fragment {
             }
         });
 
-        schedule_date.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                timeDate = node.getScheduled();
-                setupDateDialog();
-            }
-        });
-
-        deadline_date.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                timeDate = node.getDeadline();
-                setupDateDialog();
-            }
-        });
-
-
-        schedule_time.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                timeDate = node.getScheduled();
-                setupTimeDialog();
-            }
-        });
-
-        deadline_time.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                timeDate = node.getDeadline();
-                setupTimeDialog();
-            }
-        });
-
-        tags.setText(node.getTags().toString());
-
-        TagContainerLayout tagContainerLayout = (TagContainerLayout) rootView.findViewById(R.id.tcTags);
-        tagContainerLayout.setTags(node.getTags());
+        if (!node.getTags().isEmpty()) {
+            tagContainerLayout.setTags(node.getTags());
+        }
 
         setupTimeStampButtons();
 
         getActivity().invalidateOptionsMenu();
         return rootView;
     }
+
+    @OnClick({R.id.scheduled_time, R.id.deadline_time})
+    public void onTimeClick(View v) {
+        boolean isScheduled = (v.getId() == R.id.scheduled_time);
+        final OrgNodeTimeDate time;
+        if (isScheduled) {
+            time = node.getScheduled();
+        } else {
+            time = node.getDeadline();
+        }
+        setupTimeDialog(time.getTime(), new TimePickerDialog.OnTimeSetListener() {
+            @Override
+            public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                time.setTime(new LocalTime(hourOfDay, minute));
+                setupTimeStampButtons();
+            }
+        });
+    }
+
+    @OnClick({R.id.scheduled_date, R.id.deadline_date})
+    public void onDateClick(View view) {
+        boolean isScheduled = (view.getId() == R.id.scheduled_date);
+        final OrgNodeTimeDate date = isScheduled ? node.getScheduled() : node.getDeadline();
+        setupDateDialog(date.getDate(), new DatePickerDialog.OnDateSetListener() {
+            @Override
+            public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
+                date.setDate(new LocalDate(year, month + 1, dayOfMonth));
+                setupTimeStampButtons();
+            }
+        });
+    }
+
 
     private void createNewNode(ContentResolver resolver) {
         // Creating new node
@@ -238,20 +254,21 @@ public class EditNodeFragment extends Fragment {
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putLong("year_schedule", node.getScheduled().year);
-        outState.putLong("month_schedule", node.getScheduled().monthOfYear);
-        outState.putLong("day_schedule", node.getScheduled().dayOfMonth);
-        outState.putLong("hour_schedule", node.getScheduled().startTimeOfDay);
-        outState.putLong("minute_schedule", node.getScheduled().startMinute);
 
-        outState.putLong("year_deadline", node.getDeadline().year);
-        outState.putLong("month_deadline", node.getDeadline().monthOfYear);
-        outState.putLong("day_deadline", node.getDeadline().dayOfMonth);
-        outState.putLong("hour_deadline", node.getDeadline().startTimeOfDay);
-        outState.putLong("minute_deadline", node.getDeadline().startMinute);
+        outState.putSerializable(SSTATE_SCHEDULED_DATE, node.getScheduled().getDate());
+        outState.putSerializable(SSTATE_SCHEDULED_TIME, node.getScheduled().getTime());
 
-        outState.putString("todo", node.todo);
-        outState.putString("priority", node.priority);
+        outState.putSerializable(SSTATE_DEADLINE_DATE, node.getDeadline().getDate());
+        outState.putSerializable(SSTATE_DEADLINE_TIME, node.getDeadline().getTime());
+
+        outState.putString("btnTodo", node.todo);
+        outState.putString("btnPriority", node.priority);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        unbinder.unbind();
     }
 
     /**
@@ -263,15 +280,6 @@ public class EditNodeFragment extends Fragment {
      * @return : whether or not, the fragment must finish
      */
     public boolean onOKPressed() {
-        List<OrgNodeTimeDate> timedates = Arrays.asList(node.getDeadline(), node.getScheduled());
-        for (OrgNodeTimeDate timedate : timedates) {
-            if ((timedate.startMinute >= 0 || timedate.startTimeOfDay >= 0) &&
-                    (timedate.dayOfMonth < 0 || timedate.monthOfYear < 0 || timedate.year < 0)) {
-                Toast.makeText(context, R.string.pick_a_date, Toast.LENGTH_LONG).show();
-                return false;
-            }
-        }
-
         String payload = "";
         String padding = "";
         long paddingLevel;
@@ -305,13 +313,13 @@ public class EditNodeFragment extends Fragment {
     public void onCancelPressed() {
     }
 
-    private void setupDateDialog() {
-        DialogFragment newFragment = new DatePickerFragment();
+    private void setupDateDialog(LocalDate date, DatePickerDialog.OnDateSetListener onDateSetListener) {
+        DialogFragment newFragment = new DatePickerFragment(date, onDateSetListener);
         newFragment.show(getActivity().getSupportFragmentManager(), "datePicker");
     }
 
-    private void setupTimeDialog() {
-        DialogFragment newFragment = new TimePickerFragment();
+    private void setupTimeDialog(LocalTime time, TimePickerDialog.OnTimeSetListener onTimeSetListener) {
+        DialogFragment newFragment = new TimePickerFragment(time, onTimeSetListener);
         newFragment.show(getActivity().getSupportFragmentManager(), "timePicker");
     }
 
@@ -330,60 +338,48 @@ public class EditNodeFragment extends Fragment {
                                 String selectedPriority = priorityList.get(which);
                                 node.priority = selectedPriority;
 //                                setupTodoButton(context,node,button, false);
-                                priority.setText(selectedPriority);
+                                btnPriority.setText(selectedPriority);
                             }
                         });
         builder.create().show();
     }
 
-    public static class TimePickerFragment extends DialogFragment
-            implements TimePickerDialog.OnTimeSetListener {
 
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            // Use the current time as the default values for the picker
-            final Calendar c = Calendar.getInstance();
-            int hour = c.get(Calendar.HOUR_OF_DAY);
-            int minute = c.get(Calendar.MINUTE);
+    public static class TimePickerFragment extends DialogFragment {
+        private final LocalTime time;
+        private final TimePickerDialog.OnTimeSetListener onTimeSetListener;
 
-            // Create a new instance of TimePickerDialog and return it
-            return new TimePickerDialog(getActivity(), this, hour, minute,
-                    DateFormat.is24HourFormat(getActivity()));
+        public TimePickerFragment(LocalTime time, TimePickerDialog.OnTimeSetListener onTimeSetListener) {
+            this.time = time == null ? LocalTime.now() : time;
+            this.onTimeSetListener = onTimeSetListener;
         }
 
-        public void onTimeSet(TimePicker view, int hourOfDay, int minuteOfDay) {
-            timeDate.startTimeOfDay = hourOfDay;
-            timeDate.startMinute = minuteOfDay;
-            setupTimeStampButtons();
+        @NonNull
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            return new TimePickerDialog(getActivity(), this.onTimeSetListener, time.getHourOfDay(), time.getMinuteOfHour(),
+                    DateFormat.is24HourFormat(getActivity()));
         }
     }
 
-    public static class DatePickerFragment extends DialogFragment
-            implements DatePickerDialog.OnDateSetListener {
+    public static class DatePickerFragment extends DialogFragment {
+        private LocalDate date;
+        private DatePickerDialog.OnDateSetListener listener;
 
+        public DatePickerFragment(LocalDate date, DatePickerDialog.OnDateSetListener listener) {
+            this.date = date == null ? LocalDate.now() : date;
+            this.listener = listener;
+        }
+
+        @NonNull
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
-            // Use the current date as the default date in the picker
-            final Calendar c = Calendar.getInstance();
-            int year = c.get(Calendar.YEAR);
-            int month = c.get(Calendar.MONTH);
-            int day = c.get(Calendar.DAY_OF_MONTH);
+            int year = date.getYear();
+            int month = date.getMonthOfYear() - 1;
+            int day = date.getDayOfMonth();
 
-            if (timeDate.year > -1 && timeDate.monthOfYear > -1 && timeDate.dayOfMonth > -1) {
-                year = timeDate.year;
-                month = timeDate.monthOfYear;
-                day = timeDate.dayOfMonth;
-            }
-
-            // Create a new instance of DatePickerDialog and return it
-            return new DatePickerDialog(getActivity(), this, year, month, day);
+            return new DatePickerDialog(getActivity(), this.listener, year, month, day);
         }
 
-        public void onDateSet(DatePicker view, int year, int month, int day) {
-            timeDate.year = year;
-            timeDate.monthOfYear = month;
-            timeDate.dayOfMonth = day;
-            setupTimeStampButtons();
-        }
     }
 }

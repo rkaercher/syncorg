@@ -41,6 +41,7 @@ dependencies {
     compile('co.lujun:androidtagview:1.0.6') {
         exclude group: 'com.android.support', module: 'appcompat-v7'
     }
+    compile 'net.danlew:android.joda:2.9.7'
 
     compile "com.google.dagger:dagger:$DAGGER_VERSION"
 

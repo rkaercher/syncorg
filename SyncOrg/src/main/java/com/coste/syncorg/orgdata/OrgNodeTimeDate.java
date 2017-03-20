@@ -9,6 +9,12 @@ import android.text.TextUtils;
 import com.coste.syncorg.orgdata.OrgContract.Timestamps;
 import com.coste.syncorg.orgdata.OrgDatabase.Tables;
 
+import org.joda.time.LocalDate;
+import org.joda.time.LocalDateTime;
+import org.joda.time.LocalTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -31,20 +37,18 @@ public class OrgNodeTimeDate {
         patterns = Collections.unmodifiableMap(tmpMap);
     }
 
-    public TYPE type = TYPE.Scheduled;
-    public int year = -1;
-    public int monthOfYear = -1;
-    public int dayOfMonth = -1;
-    public int startTimeOfDay = -1;
-    public int startMinute = -1;
+    private TYPE type = TYPE.Timestamp;
+
     private int endTimeOfDay = -1;
     private int endMinute = -1;
     int matchStart = -1, matchEnd = -1;
 
-    private Calendar date;
+    private LocalDate date = null;
+    private LocalTime time = null;
 
     OrgNodeTimeDate(TYPE type) {
         this.type = type;
+        this.date = LocalDate.now();
     }
 
     OrgNodeTimeDate(TYPE type, String line) {
@@ -79,7 +83,7 @@ public class OrgNodeTimeDate {
         set(cursor);
     }
 
-    private static String typeToFormated(TYPE type) {
+    private static String typeToFormatted(TYPE type) {
         switch (type) {
             case Scheduled:
                 return "SCHEDULED: ";
@@ -96,7 +100,7 @@ public class OrgNodeTimeDate {
         if (TextUtils.isEmpty(timestamp))
             return "";
         else {
-            return OrgNodeTimeDate.typeToFormated(type) + "<" + timestamp + ">";
+            return OrgNodeTimeDate.typeToFormatted(type) + "<" + timestamp + ">";
         }
     }
 
@@ -109,7 +113,7 @@ public class OrgNodeTimeDate {
 //			pattern = timestampLookbehind + "(" + timestampPattern + ")";
 //		else
 
-        String pattern = "\\s*(" + OrgNodeTimeDate.typeToFormated(type) + "\\s*" + timestampPattern + ")";
+        String pattern = "\\s*(" + OrgNodeTimeDate.typeToFormatted(type) + "\\s*" + timestampPattern + ")";
 
         return Pattern.compile(pattern);
     }
@@ -117,10 +121,6 @@ public class OrgNodeTimeDate {
     static public void deleteTimestamp(Context context, long nodeId, String where) {
         Uri uri = OrgContract.Timestamps.buildIdUri(nodeId);
         context.getContentResolver().delete(uri, where, null);
-    }
-
-    public boolean isEmpty() {
-        return this.year < 0 || this.dayOfMonth < 0 || this.monthOfYear < 0;
     }
 
     public void set(Cursor cursor) {
@@ -137,40 +137,12 @@ public class OrgNodeTimeDate {
         }
     }
 
-    /**
-     * Reset the OrgNodeTimeDate with this epochTime is seconds
-     *
-     * @param epochTimeInSec
-     * @param allDay
-     */
     private void setEpochTime(long epochTimeInSec, boolean allDay) {
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(epochTimeInSec * 1000L);
-        year = calendar.get(Calendar.YEAR);
-        monthOfYear = calendar.get(Calendar.MONTH);
-        dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH);
+        long epochTimeMillisec = epochTimeInSec * 1000L;
+        date = new LocalDate(epochTimeMillisec);
         if (!allDay) {
-            startMinute = calendar.get(Calendar.MINUTE);
-            startTimeOfDay = calendar.get(Calendar.HOUR_OF_DAY);
+            time = new LocalTime(epochTimeMillisec);
         }
-    }
-
-    private void setDate(int day, int month, int year) {
-        this.dayOfMonth = day;
-        this.monthOfYear = month;
-        this.year = year;
-    }
-
-    public void setTime(int startTimeOfDay, int startMinute) {
-        this.startTimeOfDay = startTimeOfDay;
-        this.startMinute = startMinute;
-    }
-
-    public void setToCurrentDate() {
-        final Calendar c = Calendar.getInstance();
-        this.year = c.get(Calendar.YEAR);
-        this.monthOfYear = c.get(Calendar.MONTH) + 1;
-        this.dayOfMonth = c.get(Calendar.DAY_OF_MONTH);
     }
 
     private void parseDate(String line) {
@@ -183,13 +155,16 @@ public class OrgNodeTimeDate {
             matchStart = propm.start();
             matchEnd = propm.end();
             try {
-                year = Integer.parseInt(propm.group(2));
-                monthOfYear = Integer.parseInt(propm.group(3));
-                dayOfMonth = Integer.parseInt(propm.group(4));
+                int year = Integer.parseInt(propm.group(2));
+                int monthOfYear = Integer.parseInt(propm.group(3));
+                int dayOfMonth = Integer.parseInt(propm.group(4));
+
+                date = new LocalDate(year, monthOfYear, dayOfMonth);
 
                 if (propm.group(6) != null && propm.group(7) != null) {
-                    startTimeOfDay = Integer.parseInt(propm.group(6));
-                    startMinute = Integer.parseInt(propm.group(7));
+                    int startHour = Integer.parseInt(propm.group(6));
+                    int startMinute = Integer.parseInt(propm.group(7));
+                    time = new LocalTime(startHour, startMinute);
                 }
 
                 endTimeOfDay = Integer.parseInt(propm.group(10));
@@ -199,31 +174,23 @@ public class OrgNodeTimeDate {
         }
     }
 
-    public String getDate() {
-        if (year < 0 || monthOfYear < 0 || dayOfMonth < 0) return "";
-        return String.format("%d-%02d-%02d", year, monthOfYear + 1, dayOfMonth);
+    public String getDateString() {
+        DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd");
+        return fmt.print(date);
     }
 
-    public String getTime() {
-        if (startMinute < 0 && startTimeOfDay < 0) return "";
-        return String.format("%02d:%02d", startTimeOfDay, startMinute);
+    public String getTimeString() {
+        if (null == time) return "";
+        DateTimeFormatter fmt = DateTimeFormat.forPattern("hh:mm");
+        return fmt.print(time);
     }
 
-    private String getTimeDate() {
-        String date = getDate();
-        String time = getTime();
-        if (time.equals("")) return date;
-        return date + " " + time;
+    private String getTimeDateString() {
+        String dateString = getDateString();
+        if (time == null) return dateString;
+        String timeString = getTimeString();
+        return dateString + " " + timeString;
 
-    }
-
-    public String getStartTime() {
-        if (startMinute < 0 || startTimeOfDay < 0) return "";
-        return String.format("%02d:%02d", startTimeOfDay, startMinute);
-    }
-
-    private String getEndTime() {
-        return String.format("%02d:%02d", endTimeOfDay, endMinute);
     }
 
     /**
@@ -232,50 +199,32 @@ public class OrgNodeTimeDate {
      * @return
      */
     public long getEpochTime() {
-        if (year == -1 || dayOfMonth == -1 || monthOfYear == -1) return -1;
-        int hour = startTimeOfDay > -1 ? startTimeOfDay : 0;
-        int minute = startMinute > -1 ? startMinute : 0;
-        GregorianCalendar calendar = new GregorianCalendar(year, monthOfYear, dayOfMonth, hour, minute);
-        return calendar.getTimeInMillis() / 1000L;
+        if (time != null) {
+            return date.toDateTime(time).toDate().getTime() / 1000L;
+        }
+        return date.toDate().getTime() / 1000L;
     }
 
     /**
      * Check if event is all day long
-     * An event is considered all day if startTimeOfDay or startMinute is undefined
-     *
-     * @return
      */
     long isAllDay() {
-        return (startTimeOfDay < 0 || startMinute < 0) ? 1 : 0;
+        return (time == null) ? 1 : 0;
     }
 
     /**
      * Format the string according to the parameter isDate
      *
      * @param isDate: date formating or time formating
-     * @return
      */
     public String toString(boolean isDate) {
-        GregorianCalendar calendar = new GregorianCalendar(year, monthOfYear, dayOfMonth, startTimeOfDay, startMinute);
-        DateFormat instance = isDate ? SimpleDateFormat.getDateInstance() : SimpleDateFormat.getTimeInstance(DateFormat.SHORT);
-        return instance.format(calendar.getTime());
-
+        if (isDate) return getDateString();
+        return getTimeString();
     }
 
     String toFormatedString() {
-        return formatDate(type, getTimeDate());
+        return formatDate(type, getTimeDateString());
     }
-
-    private String getStartTimeFormated() {
-        String time = getStartTime();
-
-        if (startTimeOfDay == -1
-                || startMinute == -1 || TextUtils.isEmpty(time))
-            return "";
-        else
-            return " " + time;
-    }
-
 
     public void update(Context context, long nodeId, long fileId) {
         deleteTimestamp(context, nodeId, Timestamps.TYPE + "=" + type.ordinal());
@@ -298,14 +247,9 @@ public class OrgNodeTimeDate {
 
     /**
      * Check if this was at least a day before date
-     *
-     * @param date
-     * @return
      */
     private boolean isBefore(OrgNodeTimeDate date) {
-        return this.year < date.year ||
-                (this.year == date.year && (this.monthOfYear < date.monthOfYear ||
-                        (this.monthOfYear == date.monthOfYear && this.dayOfMonth < date.dayOfMonth)));
+        return this.date.isBefore(date.getDate());
     }
 
     /**
@@ -314,12 +258,31 @@ public class OrgNodeTimeDate {
      *
      * @param start: the starting date
      * @param end:   the ending date
-     * @return
      */
     public boolean isBetween(OrgNodeTimeDate start, OrgNodeTimeDate end) {
         return
                 start.isBefore(this) && this.isBefore(end)
                         || end.isBefore(this) && this.isBefore(start);
+    }
+
+    public TYPE getType() {
+        return type;
+    };
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public LocalTime getTime() {
+        return time;
+    }
+
+    public void setDate(LocalDate date) {
+        this.date = date;
+    }
+
+    public void setTime(LocalTime time) {
+        this.time = time;
     }
 
     public enum TYPE {

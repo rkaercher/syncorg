@@ -35,8 +35,6 @@ public class OrgNode {
     private OrgNodePayload orgNodePayload = null;
 
     public OrgNode() {
-        scheduled = new OrgNodeTimeDate(OrgNodeTimeDate.TYPE.Scheduled);
-        deadline = new OrgNodeTimeDate(OrgNodeTimeDate.TYPE.Deadline);
     }
 
     public OrgNode(OrgNode node) {
@@ -336,7 +334,7 @@ public class OrgNode {
 
     public void addDate(OrgNodeTimeDate date) {
         this.orgNodePayload.insertOrReplaceDate(date);
-        switch (date.type) {
+        switch (date.getType()) {
             case Deadline:
                 deadline = date;
                 break;
@@ -375,24 +373,24 @@ public class OrgNode {
         result.append(getLevelPadding('*'));
 
         if (!TextUtils.isEmpty(todo))
-            result.append(todo + " ");
+            result.append(todo).append(" ");
 
         if (!TextUtils.isEmpty(priority))
             result.append("[#" + priority + "] ");
 
         result.append(name);
 
-        if (!scheduled.isEmpty() || !deadline.isEmpty()) {
+        if (scheduled != null|| deadline != null) {
             result.append("\n" + getLevelPadding(' '));
-            if (!scheduled.isEmpty()) {
+            if (scheduled != null) {
                 result.append(scheduled.toFormatedString());
-                if (!deadline.isEmpty()) result.append(" ");
+                if (deadline != null) result.append(" ");
             }
-            if (!deadline.isEmpty()) result.append(deadline.toFormatedString());
+            if (deadline != null) result.append(deadline.toFormatedString());
         }
 
         if (tags != null && !TextUtils.isEmpty(tags))
-            result.append(" ").append(":" + tags + ":");
+            result.append(" ").append(":").append(tags).append(":");
 
         if (payload != null && !TextUtils.isEmpty(payload)) {
             for (String payload_line : payload.split("\\r?\\n")) {
@@ -413,8 +411,6 @@ public class OrgNode {
 
     /**
      * Delete this node and rewrite the file on disk
-     *
-     * @param context
      */
     public void deleteNode(Context context) {
         context.getContentResolver().delete(OrgData.buildIdUri(id), null, null);
@@ -424,8 +420,6 @@ public class OrgNode {
     /**
      * Add this node and rewrite the file on disk
      *
-     * @param context
-     * @return
      */
     private long addNode(Context context) {
 

@@ -8,6 +8,10 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.EditText;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 /**
  * An activity representing a single OrgNode detail screen. This
@@ -19,11 +23,15 @@ public class EditNodeActivity extends AppCompatActivity {
     public static String EDIT_NODE_FRAGMENT = "edit_node_fragment_tag";
     EditNodeFragment fragment;
 
+    @BindView(R.id.toolbar_1)
+    Toolbar toolbar;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_node);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_1);
+        ButterKnife.bind(this);
+
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle("");
 
