@@ -8,23 +8,20 @@ import android.text.TextUtils;
 
 import com.coste.syncorg.orgdata.OrgContract.Timestamps;
 import com.coste.syncorg.orgdata.OrgDatabase.Tables;
+import com.yahoo.squidb.annotations.TableModelSpec;
 
 import org.joda.time.LocalDate;
-import org.joda.time.LocalDateTime;
 import org.joda.time.LocalTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@TableModelSpec(className = "OrgNodeTimeDate", tableName = "timestamps")
 public class OrgNodeTimeDate {
     private static final String timestampPattern = "<((\\d{4})-(\\d{1,2})-(\\d{1,2}))(?:[^\\d]*)"
             + "((\\d{1,2})\\:(\\d{2}))?(-((\\d{1,2})\\:(\\d{2})))?[^>]*>";
@@ -37,19 +34,16 @@ public class OrgNodeTimeDate {
         patterns = Collections.unmodifiableMap(tmpMap);
     }
 
+
     private TYPE type = TYPE.Timestamp;
 
-    private int endTimeOfDay = -1;
-    private int endMinute = -1;
     int matchStart = -1, matchEnd = -1;
 
     private LocalDate date = null;
+
     private LocalTime time = null;
 
-    OrgNodeTimeDate(TYPE type) {
-        this.type = type;
-        this.date = LocalDate.now();
-    }
+    private LocalTime endTime;
 
     OrgNodeTimeDate(TYPE type, String line) {
         this.type = type;
@@ -63,7 +57,6 @@ public class OrgNodeTimeDate {
     /**
      * OrgNodeTimeDate ctor from the database
      *
-     * @param type
      * @param nodeId The OrgNode ID associated with this timestamp
      */
     OrgNodeTimeDate(TYPE type, long nodeId) {
@@ -167,8 +160,10 @@ public class OrgNodeTimeDate {
                     time = new LocalTime(startHour, startMinute);
                 }
 
-                endTimeOfDay = Integer.parseInt(propm.group(10));
-                endMinute = Integer.parseInt(propm.group(11));
+                int endHour = Integer.parseInt(propm.group(10));
+                int endMinute = Integer.parseInt(propm.group(11));
+
+                this.endTime = new LocalTime(endHour, endMinute);
             } catch (NumberFormatException e) {
             }
         }
@@ -267,7 +262,9 @@ public class OrgNodeTimeDate {
 
     public TYPE getType() {
         return type;
-    };
+    }
+
+    ;
 
     public LocalDate getDate() {
         return date;

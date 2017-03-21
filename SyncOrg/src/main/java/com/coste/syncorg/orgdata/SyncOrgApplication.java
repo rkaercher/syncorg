@@ -25,6 +25,7 @@ public class SyncOrgApplication extends Application {
     public void onCreate() {
         super.onCreate();
         JodaTimeAndroid.init(this);
+
         OrgDatabase.startDB(this);
 
         diComponent = DaggerApplicationDiComponent.builder().build();

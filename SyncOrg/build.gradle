@@ -19,12 +19,14 @@ android {
 
 repositories {
     maven { url 'http://guardian.github.com/maven/repo-releases' }
+    maven { url "https://jitpack.io" }
 }
 
 ext {
     JUNIT_VERSION = '4.12'
     DAGGER_VERSION = '2.4'
     BUTTERKNIFE_VERSION = '8.4.0'
+    SQUIDB_VERSION = "3.2.3"
 }
 
 dependencies {
@@ -52,6 +54,11 @@ dependencies {
 
     compile "com.jakewharton:butterknife:$BUTTERKNIFE_VERSION"
     annotationProcessor "com.jakewharton:butterknife-compiler:$BUTTERKNIFE_VERSION"
+
+    compile "com.yahoo.squidb:squidb:$SQUIDB_VERSION"
+    compile "com.yahoo.squidb:squidb-annotations:$SQUIDB_VERSION"
+    compile "com.yahoo.squidb:squidb-android:$SQUIDB_VERSION"
+    annotationProcessor "com.yahoo.squidb:squidb-processor:$SQUIDB_VERSION"
 
     testCompile "junit:junit:$JUNIT_VERSION"
     testAnnotationProcessor "com.google.dagger:dagger-compiler:$DAGGER_VERSION"

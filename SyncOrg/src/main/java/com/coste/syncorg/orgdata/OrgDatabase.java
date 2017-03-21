@@ -9,6 +9,8 @@ import android.database.sqlite.SQLiteStatement;
 import com.coste.syncorg.orgdata.OrgContract.OrgData;
 import com.coste.syncorg.orgdata.table.FilterEntryTable;
 import com.coste.syncorg.orgdata.table.FilterTable;
+import com.raizlabs.android.dbflow.annotation.Database;
+import com.yahoo.squidb.data.SquidDatabase;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,9 +20,10 @@ import javax.inject.Singleton;
 import static com.coste.syncorg.orgdata.OrgDatabase.Tables.ALL_TABLES;
 
 @Singleton
-public class OrgDatabase extends SQLiteOpenHelper {
+public class OrgDatabase extends SquidDatabase {
+    static final String NAME = "SyncOrg";
     private static final String DATABASE_NAME = "SyncOrg.db";
-    private static final int DATABASE_VERSION = 8;
+    static final int DATABASE_VERSION = 8;
     private static OrgDatabase mInstance = null;
     private SQLiteStatement orgdataInsertStatement;
     private SQLiteStatement addPayloadStatement;
