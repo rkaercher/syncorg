@@ -28,64 +28,66 @@ public class FilterDao {
 
     public boolean saveFilter(NodeFilter filter) {
         ContentValues values = new ContentValues();
-        values.put(FilterTable.FIELD_NAME, filter.getName());
-        values.put(FilterTable.FIELD_TYPE, filter.getType().ordinal());
-
-        long executionResult = -1;
-
-        final long filterId;
-
-        try {
-            db.getWritableDatabase().beginTransaction();
-            if (filter.getFilterId() != null) {
-                filterId = filter.getFilterId();
-                values.put(FilterTable.FIELD_ID, filter.getFilterId());
-                executionResult = db.getWritableDatabase().update(FilterTable.name, values, fieldSelection(FilterTable.FIELD_ID), new String[]{filter.getFilterId().toString()});
-                db.getWritableDatabase().delete(FilterEntryTable.name, fieldSelection(FilterEntryTable.FIELD_FILTER_ID), new String[]{filter.getFilterId().toString()});
-            } else {
-                filterId = db.getWritableDatabase().insert(FilterTable.name, null, values);
-            }
-            saveFilterFileIds(filter, filterId);
-            db.getWritableDatabase().setTransactionSuccessful();
-        } finally {
-            db.getWritableDatabase().endTransaction();
-        }
-
-        return executionResult > -1; // TODO make this meaningful
+//        values.put(FilterTable.FIELD_NAME, filter.getName());
+//        values.put(FilterTable.FIELD_TYPE, filter.getType().ordinal());
+//
+//        long executionResult = -1;
+//
+//        final long filterId;
+//
+//        try {
+//            db.getWritableDatabase().beginTransaction();
+//            if (filter.getFilterId() != null) {
+//                filterId = filter.getFilterId();
+//                values.put(FilterTable.FIELD_ID, filter.getFilterId());
+//                executionResult = db.getWritableDatabase().update(FilterTable.name, values, fieldSelection(FilterTable.FIELD_ID), new String[]{filter.getFilterId().toString()});
+//                db.getWritableDatabase().delete(FilterEntryTable.name, fieldSelection(FilterEntryTable.FIELD_FILTER_ID), new String[]{filter.getFilterId().toString()});
+//            } else {
+//                filterId = db.getWritableDatabase().insert(FilterTable.name, null, values);
+//            }
+//            saveFilterFileIds(filter, filterId);
+//            db.getWritableDatabase().setTransactionSuccessful();
+//        } finally {
+//            db.getWritableDatabase().endTransaction();
+//        }
+//
+//        return executionResult > -1; // TODO make this meaningful
+        return true;
     }
 
-    private void saveFilterFileIds(NodeFilter filter, long filterId) {
-        ContentValues values = new ContentValues(2);
-        values.put(FilterEntryTable.FIELD_FILTER_ID, filterId);
-
-        for (Long id : filter.getIncludedNodeIds()) {
-            values.put(FilterEntryTable.FIELD_FILE_ID, id);
-            db.getWritableDatabase().insert(FilterEntryTable.name, null, values);
-        }
-    }
+//    private void saveFilterFileIds(NodeFilter filter, long filterId) {
+//        ContentValues values = new ContentValues(2);
+//        values.put(FilterEntryTable.FIELD_FILTER_ID, filterId);
+//
+//        for (Long id : filter.getIncludedNodeIds()) {
+//            values.put(FilterEntryTable.FIELD_FILE_ID, id);
+//            db.getWritableDatabase().insert(FilterEntryTable.name, null, values);
+//        }
+//    }
 
     public NodeFilter loadFilter(NodeFilter.FilterType type) {
-        Cursor cursor = db.getReadableDatabase().query(FilterTable.name, new String[]{FilterTable.FIELD_ID, FilterTable.FIELD_NAME}, and(fieldSelection(FilterTable.FIELD_TYPE), fieldSelection(FilterTable.FIELD_NAME)), new String[]{String.valueOf(type.ordinal()), "DEFAULT"}, null, null, null);
-        if (cursor.getCount() == 0) {
-            return new NodeFilter(type);
-        }
-
-        Set<Long> includedIds = new HashSet<>();
-        cursor.moveToNext();
-        Integer filterId = cursor.getInt(0);
-        cursor.close();
-
-        cursor = db.getReadableDatabase().query(FilterEntryTable.name, new String[]{FilterEntryTable.FIELD_FILE_ID}, fieldSelection(FilterEntryTable.FIELD_FILTER_ID), new String[]{filterId.toString()}, null, null, null);
-
-        if (cursor.getCount() > 0) {
-            while (!cursor.isLast()) {
-                cursor.moveToNext();
-                includedIds.add(cursor.getLong(0));
-            }
-        }
-        cursor.close();
-
-        return new NodeFilter(filterId, includedIds, NodeFilter.DEFAULT, type);
+//        Cursor cursor = db.getReadableDatabase().query(FilterTable.name, new String[]{FilterTable.FIELD_ID, FilterTable.FIELD_NAME}, and(fieldSelection(FilterTable.FIELD_TYPE), fieldSelection(FilterTable.FIELD_NAME)), new String[]{String.valueOf(type.ordinal()), "DEFAULT"}, null, null, null);
+//        if (cursor.getCount() == 0) {
+//            return new NodeFilter(type);
+//        }
+//
+//        Set<Long> includedIds = new HashSet<>();
+//        cursor.moveToNext();
+//        Integer filterId = cursor.getInt(0);
+//        cursor.close();
+//
+//        cursor = db.getReadableDatabase().query(FilterEntryTable.name, new String[]{FilterEntryTable.FIELD_FILE_ID}, fieldSelection(FilterEntryTable.FIELD_FILTER_ID), new String[]{filterId.toString()}, null, null, null);
+//
+//        if (cursor.getCount() > 0) {
+//            while (!cursor.isLast()) {
+//                cursor.moveToNext();
+//                includedIds.add(cursor.getLong(0));
+//            }
+//        }
+//        cursor.close();
+//
+//        return new NodeFilter(filterId, includedIds, NodeFilter.DEFAULT, type);
+        return null;
     }
 
     protected String and(String... selections) {

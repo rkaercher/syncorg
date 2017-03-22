@@ -6,11 +6,12 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 
-import com.coste.syncorg.orgdata.OrgContract.OrgData;
-import com.coste.syncorg.orgdata.table.FilterEntryTable;
-import com.coste.syncorg.orgdata.table.FilterTable;
-import com.raizlabs.android.dbflow.annotation.Database;
+import com.coste.syncorg.orgdata.table.*;
+import com.yahoo.squidb.android.AndroidOpenHelper;
+import com.yahoo.squidb.data.ISQLiteDatabase;
+import com.yahoo.squidb.data.ISQLiteOpenHelper;
 import com.yahoo.squidb.data.SquidDatabase;
+import com.yahoo.squidb.sql.Table;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,37 +22,42 @@ import static com.coste.syncorg.orgdata.OrgDatabase.Tables.ALL_TABLES;
 
 @Singleton
 public class OrgDatabase extends SquidDatabase {
-    static final String NAME = "SyncOrg";
     private static final String DATABASE_NAME = "SyncOrg.db";
     static final int DATABASE_VERSION = 8;
     private static OrgDatabase mInstance = null;
+
     private SQLiteStatement orgdataInsertStatement;
     private SQLiteStatement addPayloadStatement;
     private SQLiteStatement addTimestampsStatement;
+    private Context context;
 
-    private OrgDatabase(Context context) {
-        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    public OrgDatabase(Context context) {
 
-        orgdataInsertStatement = getWritableDatabase()
-                .compileStatement("INSERT INTO " + Tables.ORGDATA + " ("
-                        + OrgData.NAME + ", "
-                        + OrgData.TODO + ", "
-                        + OrgData.PRIORITY + ", "
-                        + OrgData.PARENT_ID + ", "
-                        + OrgData.FILE_ID + ", "
-                        + OrgData.TAGS + ", "
-                        + OrgData.TAGS_INHERITED + ", "
-                        + OrgData.LEVEL + ", "
-                        + OrgData.POSITION + ") "
-                        + "VALUES (?,?,?,?,?,?,?,?,?)");
+//        super(context, DATABASE_NAME, null, DATABASE_VERSION);
 
-        addPayloadStatement = getWritableDatabase()
-                .compileStatement("UPDATE " + Tables.ORGDATA + " SET payload=? WHERE _id=?");
-        addTimestampsStatement = getWritableDatabase()
-                .compileStatement("INSERT INTO " + Tables.TIMESTAMPS + " (timestamp, file_id, node_id, type, all_day) VALUES (?,?,?,?,?) ");
+//        orgdataInsertStatement = getWritableDatabase()
+//                .compileStatement("INSERT INTO " + Tables.ORGDATA + " ("
+//                        + OrgData.NAME + ", "
+//                        + OrgData.TODO + ", "
+//                        + OrgData.PRIORITY + ", "
+//                        + OrgData.PARENT_ID + ", "
+//                        + OrgData.FILE_ID + ", "
+//                        + OrgData.TAGS + ", "
+//                        + OrgData.TAGS_INHERITED + ", "
+//                        + OrgData.LEVEL + ", "
+//                        + OrgData.POSITION + ") "
+//                        + "VALUES (?,?,?,?,?,?,?,?,?)");
+//
+//        addPayloadStatement = getWritableDatabase()
+//                .compileStatement("UPDATE " + Tables.ORGDATA + " SET payload=? WHERE _id=?");
+//        addTimestampsStatement = getWritableDatabase()
+//                .compileStatement("INSERT INTO " + Tables.TIMESTAMPS + " (timestamp, file_id, node_id, type, all_day) VALUES (?,?,?,?,?) ");
+        this.context = context;
     }
 
-    static void startDB(Context context) {
+
+
+    static void instantiateDb(Context context) {
         mInstance = new OrgDatabase(context);
     }
 
@@ -59,8 +65,7 @@ public class OrgDatabase extends SquidDatabase {
         return mInstance;
     }
 
-    @Override
-    public void onCreate(SQLiteDatabase db) {
+    public void onCreate(ISQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS files ("
                 + "_id integer primary key autoincrement,"
                 + "node_id integer,"
@@ -105,40 +110,38 @@ public class OrgDatabase extends SquidDatabase {
                 + "node_id integer,"
                 + "all_day integer)");
 
-        db.execSQL(FilterTable.getCreateDDL());
-        db.execSQL(FilterEntryTable.getCreateDDL());
 
         ContentValues values = new ContentValues();
         values.put("_id", "0");
         values.put("todogroup", "0");
         values.put("name", "TODO");
         values.put("isdone", "0");
-        db.insert("todos", null, values);
+    //    db.insert("todos", null, values);
 
         values.put("_id", "1");
         values.put("todogroup", "0");
         values.put("name", "DONE");
         values.put("isdone", "1");
-        db.insert("todos", null, values);
+      //  db.insert("todos", null, values);
 
     }
 
     @Override
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+    protected boolean onUpgrade(ISQLiteDatabase db, int oldVersion, int newVersion) {
         switch (newVersion) {
             case 6:
                 db.execSQL("ALTER TABLE " + Tables.FILES + " ADD time_modified integer default 0");
                 break;
             case 7:
                 for (String table : ALL_TABLES) {
-                    db.delete(table, null, null);
+                   // db.delete(table, null, null);
                 }
-                onCreate(db);
+           //     onCreate(db);
                 break;
             case 8:
-                db.execSQL(FilterTable.getCreateDDL());
-                db.execSQL(FilterEntryTable.getCreateDDL());
+
         }
+        return true;
     }
 
     long fastInsertNode(OrgNode node) {
@@ -176,13 +179,32 @@ public class OrgDatabase extends SquidDatabase {
         addPayloadStatement.execute();
     }
 
-    void beginTransaction() {
-        getWritableDatabase().beginTransaction();
+    @Override
+    public String getName() {
+        return DATABASE_NAME;
     }
 
-    void endTransaction() {
-        getWritableDatabase().setTransactionSuccessful();
-        getWritableDatabase().endTransaction();
+    @Override
+    protected int getVersion() {
+        return DATABASE_VERSION;
+    }
+
+    @Override
+    protected Table[] getTables() {
+        return new Table[] {FilterEntity.TABLE, FileEntity.TABLE, OrgNodeEntity.TABLE, TagEntity.TABLE};
+    }
+
+    @Override
+    protected ISQLiteOpenHelper createOpenHelper(String databaseName, OpenHelperDelegate delegate, int version) {
+        return new AndroidOpenHelper(this.context, databaseName,delegate, version);
+    }
+
+    public SQLiteDatabase getReadableDatabase() {
+        return (SQLiteDatabase) this.getDatabase().getWrappedObject();
+    }
+
+    public SQLiteDatabase getWritableDatabase() {
+        return (SQLiteDatabase) this.getDatabase().getWrappedObject();
     }
 
     public interface Tables {

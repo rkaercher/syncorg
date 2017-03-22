@@ -11,11 +11,14 @@ import android.widget.Toast;
 import com.coste.syncorg.R;
 import com.coste.syncorg.orgdata.OrgDatabase;
 import com.coste.syncorg.orgdata.OrgFile;
-import com.coste.syncorg.orgdata.OrgFileParser;
+import com.coste.syncorg.orgdata.OrgFileImporter;
+import com.coste.syncorg.orgdata.SyncOrgApplication;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
+
+import javax.inject.Inject;
 
 public class FileDecryptionActivity extends Activity {
     private static final String mApgPackageName = "org.thialfihar.android.apg";
@@ -29,12 +32,17 @@ public class FileDecryptionActivity extends Activity {
     private String name;
     private String checksum;
 
+    @Inject
+    OrgFileImporter importer;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         if (isAvailable() == false)
             return;
+
+        ((SyncOrgApplication)getApplication()).getDiComponent().inject(this);
 
         Intent intent = getIntent();
 
@@ -69,8 +77,7 @@ public class FileDecryptionActivity extends Activity {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(
                         new ByteArrayInputStream(decryptedData.getBytes())));
 
-                OrgDatabase db = OrgDatabase.getInstance();
-                OrgFileParser.getInstance().parse(new OrgFile(filename, name), reader, this);
+                importer.parse(new OrgFile(filename, name), reader, this);
                 break;
         }
         finish();

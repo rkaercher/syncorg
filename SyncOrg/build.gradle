@@ -12,10 +12,27 @@ android {
         targetSdkVersion 24
         versionCode 11
         versionName "2.0.5.4"
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = [
+                        squidbPlugins: 'com.aminelaadhari.squidb.datetime.DateTimePlugin'
+                ]
+            }
+
+        }
+        jackOptions {
+            enabled true
+        }
+
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
     useLibrary 'org.apache.http.legacy'
 }
+
 
 repositories {
     maven { url 'http://guardian.github.com/maven/repo-releases' }
@@ -27,6 +44,7 @@ ext {
     DAGGER_VERSION = '2.4'
     BUTTERKNIFE_VERSION = '8.4.0'
     SQUIDB_VERSION = "3.2.3"
+    ANDROID_SUPPORT_VERSION = "24.0.0"
 }
 
 dependencies {
@@ -34,18 +52,22 @@ dependencies {
 
     compile 'com.google.android.gms:play-services-drive:10.2.0'
     compile 'com.jcraft:jsch:0.1.50'
-    compile 'com.android.support:appcompat-v7:24.0.0'
-    compile 'com.android.support:support-v4:24.0.0'
-    compile 'com.android.support:recyclerview-v7:24.0.0'
-    compile 'com.android.support:design:24.0.0'
-    compile 'com.android.support:cardview-v7:24.0.0'
+    compile "com.android.support:appcompat-v7:$ANDROID_SUPPORT_VERSION"
+    compile "com.android.support:support-v4:$ANDROID_SUPPORT_VERSION"
+    compile "com.android.support:recyclerview-v7:$ANDROID_SUPPORT_VERSION"
+    compile "com.android.support:design:$ANDROID_SUPPORT_VERSION"
+    compile "com.android.support:cardview-v7:$ANDROID_SUPPORT_VERSION"
     compile 'org.eclipse.jgit:org.eclipse.jgit:2.1.0.201209190230-r'
     compile('co.lujun:androidtagview:1.0.6') {
         exclude group: 'com.android.support', module: 'appcompat-v7'
     }
-    compile 'net.danlew:android.joda:2.9.7'
+    compile('net.danlew:android.joda:2.9.7') {
+        exclude group: 'joda-time', module: 'joda-time'
+    }
 
     compile "com.google.dagger:dagger:$DAGGER_VERSION"
+
+    compile 'org.cowboyprogrammer:orgparser:1.3.1'
 
     debugAnnotationProcessor "com.google.dagger:dagger-compiler:$DAGGER_VERSION"
     annotationProcessor "com.google.dagger:dagger-compiler:$DAGGER_VERSION"
@@ -58,10 +80,11 @@ dependencies {
     compile "com.yahoo.squidb:squidb:$SQUIDB_VERSION"
     compile "com.yahoo.squidb:squidb-annotations:$SQUIDB_VERSION"
     compile "com.yahoo.squidb:squidb-android:$SQUIDB_VERSION"
+    compile project(':squidb-datetime')
     annotationProcessor "com.yahoo.squidb:squidb-processor:$SQUIDB_VERSION"
 
     testCompile "junit:junit:$JUNIT_VERSION"
     testAnnotationProcessor "com.google.dagger:dagger-compiler:$DAGGER_VERSION"
-    testCompile 'org.mockito:mockito-core:1.10.19'
+    testCompile "org.robolectric:robolectric:3.3.1"
 }
 

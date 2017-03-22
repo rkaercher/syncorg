@@ -10,7 +10,6 @@ import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AlertDialog;
@@ -29,11 +28,14 @@ import com.coste.syncorg.gui.SearchActivity;
 import com.coste.syncorg.gui.outline.MainAdapter;
 import com.coste.syncorg.gui.wizard.WizardActivity;
 import com.coste.syncorg.orgdata.OrgFile;
+import com.coste.syncorg.orgdata.SyncOrgApplication;
 import com.coste.syncorg.settings.SettingsActivity;
 import com.coste.syncorg.synchronizers.Synchronizer;
 import com.coste.syncorg.util.PreferenceUtils;
 
 import java.io.File;
+
+import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -60,7 +62,13 @@ public class MainActivity extends AppCompatActivity {
     private Long node_id;
     private SynchServiceReceiver syncReceiver;
     private MenuItem synchronizerMenuItem;
-    private RecyclerView recyclerView;
+
+
+    @Inject
+    Synchronizer synchronizer;
+
+    @BindView(R.id.orgnode_list)
+    RecyclerView recyclerView;
 
     @BindView(R.id.fab)
     FloatingActionButton addFileButton;
@@ -68,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ((SyncOrgApplication) getApplication()).getDiComponent().inject(this);
         setContentView(R.layout.main_activity);
         ButterKnife.bind(this);
 
@@ -83,9 +92,7 @@ public class MainActivity extends AppCompatActivity {
             displayNewUserDialogs();
         }
 
-        recyclerView = (RecyclerView) findViewById(R.id.orgnode_list);
-        assert recyclerView != null;
-        setupRecyclerView(recyclerView);
+        recyclerView.setAdapter(new MainAdapter(this));
 
         if (findViewById(R.id.orgnode_detail_container) != null) {
             // The detail container view will be present only in the
@@ -125,8 +132,8 @@ public class MainActivity extends AppCompatActivity {
                         }
                         newFile.addFile(MainActivity.this);
                         ((MainAdapter) recyclerView.getAdapter()).refresh();
-                        Synchronizer.addFile(MainActivity.this, filename);
-                        Synchronizer.runSynchronize(MainActivity.this);
+                        synchronizer.addFile(filename);
+                        synchronizer.runSynchronize();
                     }
                 });
 
@@ -140,7 +147,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Synchronizer.runSynchronize(this);
+        synchronizer.runSynchronize();
     }
 
 
@@ -173,7 +180,7 @@ public class MainActivity extends AppCompatActivity {
 
             case R.id.menu_sync:
                 passwordPrompt = true;
-                Synchronizer.runSynchronize(this);
+                synchronizer.runSynchronize();
                 return true;
 
             case R.id.menu_settings:
@@ -210,10 +217,6 @@ public class MainActivity extends AppCompatActivity {
         return onSearchRequested();
     }
 
-    private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-        recyclerView.setAdapter(new MainAdapter(this));
-    }
-
     private void showUpgradePopup() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setMessage(R.string.upgrade);
@@ -246,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         ((MainAdapter) recyclerView.getAdapter()).refresh();
-        Synchronizer.runSynchronize(this);
+        synchronizer.runSynchronize();
     }
 
     @Override

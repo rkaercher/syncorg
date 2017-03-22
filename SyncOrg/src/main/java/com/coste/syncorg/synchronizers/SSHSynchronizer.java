@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import com.coste.syncorg.orgdata.OrgFileImporter;
 import com.coste.syncorg.services.PermissionManager;
 import com.coste.syncorg.util.OrgUtils;
 import com.jcraft.jsch.JSch;
@@ -16,23 +17,32 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+@Singleton
 public class SSHSynchronizer extends Synchronizer {
     private final String LT = "SyncOrg";
-    AuthData authData;
-    String absoluteFileDir;
+    private AuthData authData;
+    private String absoluteFileDir;
     private Session session;
 
-    public SSHSynchronizer(Context context) {
-        super(context);
+    private JGitWrapper gitWrapper;
+
+
+    @Inject
+    public SSHSynchronizer(Context context, JGitWrapper gitWrapper, OrgFileImporter importer) {
+        super(context, importer);
+        this.gitWrapper = gitWrapper;
         this.context = context;
         authData = AuthData.getInstance(context);
         SharedPreferences appSettings = PreferenceManager
                 .getDefaultSharedPreferences(context);
-        this.absoluteFileDir = appSettings.getString("syncFolder",
+        this.absoluteFileDir = appSettings.getString("repoPath",
                 context.getFilesDir() + "/" + JGitWrapper.GIT_DIR);
 
 
-        if (PermissionManager.permissionGranted(context) == false) return;
+        if (!PermissionManager.permissionGranted(context)) return;
 
         File dir = new File(getAbsoluteFilesDir());
         if (!dir.exists()) {
@@ -55,7 +65,7 @@ public class SSHSynchronizer extends Synchronizer {
                 && AuthData.getPublicKey(context).equals(""));
     }
 
-    public void connect() {
+    private void connect() {
         try {
             SshSessionFactory sshSessionFactory = new SshSessionFactory(context);
             JSch jSch = sshSessionFactory.createDefaultJSch(FS.detect());
@@ -98,20 +108,19 @@ public class SSHSynchronizer extends Synchronizer {
     }
 
     public SyncResult synchronize() {
-        if (PermissionManager.permissionGranted(context) == false) return new SyncResult();
+        if (!PermissionManager.permissionGranted(context)) return new SyncResult();
 
         if (isCredentialsRequired()) return new SyncResult();
-        String folder = Synchronizer.getSynchronizer(context).getAbsoluteFilesDir();
-        SyncResult pullResult = withAbsolutePaths(folder, JGitWrapper.pull(context, folder));
+        String folder = getAbsoluteFilesDir();
+        SyncResult pullResult = withAbsolutePaths(folder, gitWrapper.pull(context, folder));
 
-        new JGitWrapper.PushTask(context).execute();
+        gitWrapper.createPushTask(context, getAbsoluteFilesDir()).execute();
         return pullResult;
     }
 
     /**
      * Except if authentication by Public Key, the user has to enter his password
      *
-     * @return
      */
     public boolean isCredentialsRequired() {
         return false;
@@ -124,8 +133,8 @@ public class SSHSynchronizer extends Synchronizer {
     }
 
     @Override
-    public void _addFile(String filename) {
-        JGitWrapper.add(filename, context);
+    public void addFile(String filename) {
+        gitWrapper.add(filename, context, getAbsoluteFilesDir());
     }
 
     @Override

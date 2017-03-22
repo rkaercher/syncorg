@@ -17,6 +17,7 @@ import android.widget.Toast;
 import com.coste.syncorg.MainActivity;
 import com.coste.syncorg.R;
 import com.coste.syncorg.directory_chooser.FolderPickerActivity;
+import com.coste.syncorg.orgdata.SyncOrgApplication;
 import com.coste.syncorg.synchronizers.Synchronizer;
 
 import java.io.File;
@@ -26,12 +27,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import javax.inject.Inject;
+
 
 public class NoSyncWizard extends AppCompatActivity {
     static public String FOLDER_PATH;
     final private int PICKFILE_RESULT_CODE = 1;
     String syncFolder = null;
     TextView orgFolder;
+
+    @Inject
+    Synchronizer synchronizer;
 
     public static void copyDirectoryOneLocationToAnotherLocation(File sourceLocation, File targetLocation)
             throws IOException {
@@ -65,6 +71,7 @@ public class NoSyncWizard extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.wizard_no_sync);
+        ((SyncOrgApplication)getApplication()).getDiComponent().inject(this);
 
         Button folder = (Button) findViewById(R.id.select_folder);
         folder.setOnClickListener(new OnClickListener() {
@@ -99,7 +106,7 @@ public class NoSyncWizard extends AppCompatActivity {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         String syncSource = sharedPreferences.getString("syncSource", "null");
 
-        final String currentSyncFolder = Synchronizer.getSynchronizer(context).getAbsoluteFilesDir();
+        final String currentSyncFolder = synchronizer.getAbsoluteFilesDir();
         if (syncSource.equals("null") || syncSource.equals("nullSync")) {
             final File currentSyncFolderFile = new File(currentSyncFolder);
             File[] currentNodes = currentSyncFolderFile.listFiles();

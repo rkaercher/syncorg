@@ -10,6 +10,7 @@ import android.util.Base64;
 
 import com.coste.syncorg.R;
 import com.coste.syncorg.gui.CertificateConflictActivity;
+import com.coste.syncorg.orgdata.OrgFileImporter;
 import com.coste.syncorg.util.FileUtils;
 import com.coste.syncorg.util.OrgUtils;
 
@@ -43,8 +44,8 @@ public class WebDAVSynchronizer extends Synchronizer {
 
     private Resources r;
 
-    public WebDAVSynchronizer(Context context) {
-        super(context);
+    public WebDAVSynchronizer(Context context, OrgFileImporter importer) {
+        super(context,importer);
         this.r = context.getResources();
         SharedPreferences sharedPreferences = PreferenceManager
                 .getDefaultSharedPreferences(context);
@@ -260,7 +261,7 @@ public class WebDAVSynchronizer extends Synchronizer {
     }
 
     @Override
-    public void _addFile(String filename) {
+    public void addFile(String filename) {
 
     }
 

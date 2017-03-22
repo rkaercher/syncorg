@@ -1,1 +1,1 @@
-include ':SyncOrg'
+include ':SyncOrg', ':squidb-datetime'

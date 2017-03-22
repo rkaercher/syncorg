@@ -10,7 +10,7 @@ import com.coste.syncorg.R;
 import com.coste.syncorg.gui.SynchronizerNotification;
 import com.coste.syncorg.gui.SynchronizerNotificationCompat;
 import com.coste.syncorg.orgdata.OrgFile;
-import com.coste.syncorg.orgdata.OrgFileParser;
+import com.coste.syncorg.orgdata.OrgFileImporter;
 import com.coste.syncorg.util.OrgUtils;
 
 import java.io.BufferedReader;
@@ -23,11 +23,9 @@ import java.util.HashSet;
  * The base class of all the synchronizers.
  * The singleton instance of the class can be retreived using getInstance()
  * This class implements many of the operations that need to be done on
- * synching. Instead of using it directly, create a {@link SyncManager}.
+ * synching.
  * <p/>
- * When implementing a new synchronizer, the methods {@link #isConfigured()},
- * {@link #putRemoteFile(String, String)} and {@link #getRemoteFile(String)} are
- * needed.
+
  */
 public abstract class Synchronizer {
     public static final String SYNC_UPDATE = "com.coste.syncorg.Synchronizer.action.SYNC_UPDATE";
@@ -39,10 +37,14 @@ public abstract class Synchronizer {
     private static boolean syncEnabled = true;
     protected Context context;
     private ContentResolver resolver;
+    private OrgFileImporter importer;
     private SynchronizerNotificationCompat notify;
-    protected Synchronizer(Context context) {
+
+
+    protected Synchronizer(Context context, OrgFileImporter importer) {
         this.context = context;
         this.resolver = context.getContentResolver();
+        this.importer = importer;
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB)
             this.notify = new SynchronizerNotification(context);
@@ -50,44 +52,19 @@ public abstract class Synchronizer {
             this.notify = new SynchronizerNotificationCompat(context);
     }
 
-    public static void setSyncEnabled(boolean syncEnabled) {
+    public void setSyncEnabled(boolean syncEnabled) {
         Synchronizer.syncEnabled = syncEnabled;
-    }
-
-    /**
-     * Return an instance of the synchronizer according to the user preferences
-     *
-     * @param context
-     * @return
-     */
-    public static Synchronizer getSynchronizer(Context context) {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-
-        String syncSource = preferences.getString("syncSource", "");
-
-        if (syncSource.equals("sdcard"))
-            return new SDCardSynchronizer(context);
-        else if (syncSource.equals("scp"))
-            return new SSHSynchronizer(context);
-        else
-            return new ExternalSynchronizer(context);
     }
 
     /**
      * Instanciate a synchronizer and start a synchronization if not already running
      *
-     * @param context
      */
-    public static void runSynchronize(final Context context) {
+    public void runSynchronize() {
         Thread syncThread = new Thread() {
             public void run() {
                 syncRunning = true;
-                Synchronizer syncer = getSynchronizer(context);
-                if (syncer == null) {
-                    syncRunning = false;
-                    return;
-                }
-
+                Synchronizer syncer = Synchronizer.this;
                 try {
                     syncer.execute();
                     syncer.postSynchronize();
@@ -102,13 +79,6 @@ public abstract class Synchronizer {
         if (syncEnabled && !syncRunning) {
             syncThread.start();
         }
-    }
-
-
-    public static void addFile(Context context, String filename) {
-        Synchronizer syncer = getSynchronizer(context);
-        if (syncer == null) return;
-        syncer._addFile(filename);
     }
 
     /**
@@ -149,7 +119,7 @@ public abstract class Synchronizer {
                 OrgFile orgFile = new OrgFile(filename, getRelativeFilePath(filename));
                 FileReader fileReader = new FileReader(filename);
                 BufferedReader bufferedReader = new BufferedReader(fileReader);
-                OrgFileParser.parseFile(orgFile, bufferedReader, context);
+                importer.parseFile(orgFile, bufferedReader, context);
                 orgFile.updateTimeModified(context);
             }
 
@@ -257,7 +227,7 @@ public abstract class Synchronizer {
      *
      * @param filename
      */
-    abstract public void _addFile(String filename);
+    abstract public void addFile(String filename);
 
 
 }

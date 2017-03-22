@@ -16,10 +16,13 @@ import com.coste.syncorg.MainActivity;
 import com.coste.syncorg.R;
 import com.coste.syncorg.orgdata.OrgContract;
 import com.coste.syncorg.orgdata.OrgFile;
+import com.coste.syncorg.orgdata.SyncOrgApplication;
 import com.coste.syncorg.synchronizers.JGitWrapper;
 import com.coste.syncorg.synchronizers.Synchronizer;
 import com.coste.syncorg.util.OrgFileNotFoundException;
 import com.coste.syncorg.util.OrgUtils;
+
+import javax.inject.Inject;
 
 public class ConflictResolverActivity extends AppCompatActivity {
 
@@ -27,9 +30,16 @@ public class ConflictResolverActivity extends AppCompatActivity {
     String filename;
     Long nodeId;
 
+    @Inject
+    Synchronizer synchronizer;
+
+    @Inject
+    JGitWrapper gitWrapper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ((SyncOrgApplication)getApplication()).getDiComponent().inject(this);
         setContentView(R.layout.activity_conflict_resolver);
         Toolbar toolbar = (Toolbar) findViewById(R.id.detail_toolbar);
         setSupportActionBar(toolbar);
@@ -51,7 +61,7 @@ public class ConflictResolverActivity extends AppCompatActivity {
                     actionBar.setTitle(file.name);
                 }
 
-                String dir = Synchronizer.getSynchronizer(this).getAbsoluteFilesDir();
+                String dir = synchronizer.getAbsoluteFilesDir();
                 this.filename = dir + "/" + file.filename;
                 editText.setText(OrgUtils.readAll(this.filename));
 
@@ -78,7 +88,7 @@ public class ConflictResolverActivity extends AppCompatActivity {
             case R.id.edit_menu_ok:
                 if (this.filename != null && !this.filename.equals("")) {
                     OrgUtils.writeToFile(this.filename, editText.getText().toString());
-                    new JGitWrapper.MergeTask(this, this.filename).execute();
+                    gitWrapper.createMergeTask(this, this.filename, synchronizer.getAbsoluteFilesDir()).execute();
                     OrgFile f = null;
                     try {
                         f = new OrgFile(nodeId, this.getContentResolver());

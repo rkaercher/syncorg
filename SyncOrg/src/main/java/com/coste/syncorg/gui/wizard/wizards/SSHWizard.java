@@ -4,6 +4,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.DialogFragment;
@@ -22,7 +23,10 @@ import android.widget.Toast;
 
 import com.coste.syncorg.R;
 import com.coste.syncorg.directory_chooser.FolderPickerActivity;
+import com.coste.syncorg.orgdata.SyncOrgApplication;
 import com.coste.syncorg.synchronizers.JGitWrapper;
+
+import javax.inject.Inject;
 
 public class SSHWizard extends AppCompatActivity {
     final private int PICKFILE_RESULT_CODE = 1;
@@ -35,9 +39,13 @@ public class SSHWizard extends AppCompatActivity {
     private TextView parentFolder;
     private TextView sshPubFileActual;
 
+    @Inject
+    JGitWrapper gitWrapper;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ((SyncOrgApplication)getApplication()).getDiComponent().inject(this);
         setContentView(R.layout.wizard_ssh);
 
 
@@ -179,7 +187,7 @@ public class SSHWizard extends AppCompatActivity {
         editor.putString("scpPass", sshPass.getText().toString());
         editor.apply();
 
-        JGitWrapper.CloneGitRepoTask task = new JGitWrapper.CloneGitRepoTask(this, folderActual);
+        AsyncTask task =  gitWrapper.createCloneTask(this, folderActual);
         task.execute(pathActual, sshPass.getText().toString(), userActual, hostActual, portActual);
     }
 

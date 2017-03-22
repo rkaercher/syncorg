@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 import com.coste.syncorg.orgdata.OrgFile;
+import com.coste.syncorg.orgdata.OrgFileImporter;
 import com.coste.syncorg.services.PermissionManager;
 
 import java.io.BufferedReader;
@@ -13,22 +14,27 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeSet;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 /**
  * A synchronizer that keeps track of the synchronization state of a standard folder
  * This is done by keeping track of the timestamp of last modification for each file in the folder.
  * Every time the synchronizer is called it will check whether timestamps kept in DB match those of
  * the files. It will then parse new files and externally modified files
  */
+@Singleton
 public class ExternalSynchronizer extends Synchronizer {
-    String syncFolder;
+    private String syncFolder;
 
-    public ExternalSynchronizer(Context context) {
-        super(context);
+    @Inject
+    public ExternalSynchronizer(Context context, OrgFileImporter importer) {
+        super(context, importer);
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        syncFolder = preferences.getString("syncFolder", "null");
+        syncFolder = preferences.getString("repoPath", "null");
         File dir = new File(getAbsoluteFilesDir());
 
-        if (PermissionManager.permissionGranted(context) == false) return;
+        if (!PermissionManager.permissionGranted(context)) return;
 
         if (!dir.exists()) {
             createSyncFolder();
@@ -36,7 +42,7 @@ public class ExternalSynchronizer extends Synchronizer {
     }
 
 
-    public void createSyncFolder() {
+    private void createSyncFolder() {
         File dir = new File(getAbsoluteFilesDir());
         dir.mkdir();
     }
@@ -60,7 +66,7 @@ public class ExternalSynchronizer extends Synchronizer {
     @Override
     public SyncResult synchronize() {
         SyncResult result = new SyncResult();
-        if (PermissionManager.permissionGranted(context) == false) return result;
+        if (!PermissionManager.permissionGranted(context)) return result;
 
         ArrayList<File> files = getFilesRecursively(new File(getAbsoluteFilesDir()));
 
@@ -78,7 +84,7 @@ public class ExternalSynchronizer extends Synchronizer {
         return result;
     }
 
-    ArrayList<File> getFilesRecursively(File dir) {
+    private ArrayList<File> getFilesRecursively(File dir) {
         ArrayList<File> result = new ArrayList<>();
         if (dir == null || dir.listFiles() == null) return result;
 
@@ -101,7 +107,7 @@ public class ExternalSynchronizer extends Synchronizer {
     }
 
     @Override
-    public void _addFile(String filename) {
+    public void addFile(String filename) {
 
     }
 

@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@TableModelSpec(className = "OrgNodeTimeDate", tableName = "timestamps")
 public class OrgNodeTimeDate {
     private static final String timestampPattern = "<((\\d{4})-(\\d{1,2})-(\\d{1,2}))(?:[^\\d]*)"
             + "((\\d{1,2})\\:(\\d{2}))?(-((\\d{1,2})\\:(\\d{2})))?[^>]*>";
@@ -72,8 +71,8 @@ public class OrgNodeTimeDate {
 
         this.type = type;
 
-        Cursor cursor = OrgDatabase.getInstance().getReadableDatabase().rawQuery(todoQuery, null);
-        set(cursor);
+//        Cursor cursor = OrgDatabase.getInstance().getReadableDatabase().rawQuery(todoQuery, null);
+//        set(cursor);
     }
 
     private static String typeToFormatted(TYPE type) {

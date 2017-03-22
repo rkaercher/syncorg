@@ -34,12 +34,15 @@ import com.coste.syncorg.orgdata.OrgContract;
 import com.coste.syncorg.orgdata.OrgFile;
 import com.coste.syncorg.orgdata.OrgNode;
 import com.coste.syncorg.orgdata.OrgProviderUtils;
+import com.coste.syncorg.orgdata.SyncOrgApplication;
 import com.coste.syncorg.synchronizers.Synchronizer;
 import com.coste.syncorg.util.OrgNodeNotFoundException;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.inject.Inject;
 
 public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
     private final AppCompatActivity activity;
@@ -130,10 +133,15 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
         }
     };
 
-    public MainAdapter(AppCompatActivity activity) {
+    @Inject
+    Synchronizer synchronizer;
+
+    public MainAdapter(AppCompatActivity activity) { //TODO inject
         super();
         this.activity = activity;
         this.resolver = activity.getContentResolver();
+
+        ((SyncOrgApplication) this.activity.getApplication()).getDiComponent().inject(this);
 
         this.theme = DefaultTheme.getTheme(activity);
         selectedItems = new SparseBooleanArray();
@@ -361,7 +369,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
             OrgFile file = items.get(num);
             file.removeFile(activity, true);
         }
-        Synchronizer.runSynchronize(activity);
+        synchronizer.runSynchronize();
         refresh();
         actionMode.finish();
     }

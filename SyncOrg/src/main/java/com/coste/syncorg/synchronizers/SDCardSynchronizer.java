@@ -3,6 +3,8 @@ package com.coste.syncorg.synchronizers;
 import android.content.Context;
 import android.preference.PreferenceManager;
 
+import com.coste.syncorg.orgdata.OrgFileImporter;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -17,8 +19,8 @@ public class SDCardSynchronizer extends Synchronizer {
     private String remoteIndexPath;
     private String remotePath;
 
-    public SDCardSynchronizer(Context context) {
-        super(context);
+    public SDCardSynchronizer(Context context, OrgFileImporter importer) {
+        super(context, importer);
         this.remoteIndexPath = PreferenceManager.getDefaultSharedPreferences(
                 context).getString("indexFilePath", "");
 
@@ -63,7 +65,7 @@ public class SDCardSynchronizer extends Synchronizer {
     }
 
     @Override
-    public void _addFile(String filename) {
+    public void addFile(String filename) {
 
     }
 

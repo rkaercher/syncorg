@@ -17,7 +17,10 @@ import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class OrgFileParser {
+import javax.inject.Singleton;
+
+@Singleton
+public class OrgFileImporter {
     public static final String BLOCK_SEPARATOR_PREFIX = "#HEAD#";
     private static final Pattern starPattern = Pattern.compile("^(\\**)\\s");
     private static final String fileMatchPattern = "\\[file:(.*?)\\]\\[(.*?)\\]\\]";
@@ -26,8 +29,8 @@ public class OrgFileParser {
     private static final Pattern getPriorities = Pattern
             .compile("#\\+ALLPRIORITIES:([^\\n]+)");
     private static final Pattern getTags = Pattern.compile("#\\+TAGS:([^\\n]+)");
-    static private OrgFileParser mInstance;
-    Context context;
+    static private OrgFileImporter mInstance;
+    private Context context;
     private ContentResolver resolver;
     private OrgDatabase db;
     private ParseStack parseStack;
@@ -38,19 +41,11 @@ public class OrgFileParser {
     private HashMap<Integer, Integer> position;
     private HashMap<OrgNodeTimeDate.TYPE, OrgNodeTimeDate> timestamps;
 
-    private OrgFileParser(Context context) {
+    public OrgFileImporter(Context context) {
         this.db = OrgDatabase.getInstance();
         this.context = context;
         this.resolver = context.getContentResolver();
         timestamps = new HashMap<>();
-    }
-
-    static public OrgFileParser getInstance() {
-        return mInstance;
-    }
-
-    static public void startParser(Context context) {
-        mInstance = new OrgFileParser(context);
     }
 
     private static int numberOfStars(String thisLine) {
@@ -62,7 +57,7 @@ public class OrgFileParser {
     }
 
 
-    public static HashMap<String, Boolean> parseTodos(String line) {
+    private static HashMap<String, Boolean> parseTodos(String line) {
         HashMap<String, Boolean> result = null;
 
         Matcher m = getTodos.matcher(line);
@@ -90,7 +85,7 @@ public class OrgFileParser {
         return result;
     }
 
-    public static void decryptAndParseFile(OrgFile orgFile, BufferedReader reader, Context context) {
+    private static void decryptAndParseFile(OrgFile orgFile, BufferedReader reader, Context context) {
         try {
             Intent intent = new Intent(context, FileDecryptionActivity.class);
             intent.putExtra("data", FileUtils.read(reader).getBytes());
@@ -105,15 +100,13 @@ public class OrgFileParser {
     /**
      * Remove old file from DB, decrypt file if encrypted and then parse
      *
-     * @param orgFile
-     * @param breader
-     * @param context
      */
-    public static void parseFile(OrgFile orgFile, BufferedReader breader, Context context) {
+    public void parseFile(OrgFile orgFile, BufferedReader breader, Context context) {
         if (orgFile.isEncrypted())
+            //TODO check
             decryptAndParseFile(orgFile, breader, context);
         else {
-            OrgFileParser.getInstance().parse(orgFile, breader, context);
+            parse(orgFile, breader, context);
         }
     }
 
@@ -139,7 +132,7 @@ public class OrgFileParser {
         parse(orgFile, breader);
     }
 
-    public void parse(OrgFile orgFile, BufferedReader breader) {
+    private void parse(OrgFile orgFile, BufferedReader breader) {
         init(orgFile);
         db.beginTransaction();
 
@@ -217,7 +210,7 @@ public class OrgFileParser {
     private class ParseStack {
         private Stack<Item> stack;
 
-        public ParseStack() {
+        ParseStack() {
             this.stack = new Stack<>();
         }
 
