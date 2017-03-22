@@ -11,7 +11,7 @@ import android.widget.Toast;
 
 import com.coste.syncorg.MainActivity;
 import com.coste.syncorg.R;
-import com.coste.syncorg.orgdata.OrgFile;
+import com.coste.syncorg.orgdata.OrgFileOld;
 import com.coste.syncorg.orgdata.OrgFileImporter;
 import com.coste.syncorg.orgdata.OrgProviderUtils;
 import com.coste.syncorg.synchronizers.SshSessionFactory.ConnectionType;
@@ -165,7 +165,7 @@ public class JGitWrapper {
             status = git.status().call();
             ContentResolver resolver = context.getContentResolver();
             for (String file : status.getConflicting()) {
-                OrgFile f = new OrgFile(file, resolver);
+                OrgFileOld f = new OrgFileOld(file, resolver);
                 ContentValues values = new ContentValues();
                 values.put("comment", "conflict");
                 f.updateFileInDB(resolver, values);
@@ -352,21 +352,14 @@ public class JGitWrapper {
             File file[] = f.listFiles();
             if (file == null) return;
             for (File aFile : file) {
-                String filename = aFile.getName();
-                if (filename.equals(".git")) continue;
-                OrgFile orgFile = new OrgFile(filename, filename);
-                FileReader fileReader = null;
-                try {
-                    fileReader = new FileReader(fileDir + "/" + filename);
-                    BufferedReader bufferedReader = new BufferedReader(fileReader);
-
-                    importer.parseFile(orgFile, bufferedReader, context);
-
+                if (aFile.getName().startsWith(".")) continue; // no hidden files
+                try (BufferedReader bufferedReader = new BufferedReader(new FileReader(aFile))) {
+                    importer.parseFile(aFile.getAbsolutePath(), bufferedReader, context);
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace(); // TODO handle/notify error
                 }
-
-
             }
         }
     }

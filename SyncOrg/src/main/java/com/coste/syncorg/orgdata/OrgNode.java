@@ -129,19 +129,19 @@ public class OrgNode {
 
     public String getFilename(ContentResolver resolver) {
         try {
-            OrgFile file = new OrgFile(fileId, resolver);
+            OrgFileOld file = new OrgFileOld(fileId, resolver);
             return file.filename;
         } catch (OrgFileNotFoundException e) {
             return "";
         }
     }
 
-    public OrgFile getOrgFile(ContentResolver resolver) throws OrgFileNotFoundException {
-        return new OrgFile(fileId, resolver);
+    public OrgFileOld getOrgFile(ContentResolver resolver) throws OrgFileNotFoundException {
+        return new OrgFileOld(fileId, resolver);
     }
 
     public void setFilename(String filename, ContentResolver resolver) throws OrgFileNotFoundException {
-        OrgFile file = new OrgFile(filename, resolver);
+        OrgFileOld file = new OrgFileOld(filename, resolver);
         this.fileId = file.nodeId;
     }
 
@@ -414,7 +414,7 @@ public class OrgNode {
      */
     public void deleteNode(Context context) {
         context.getContentResolver().delete(OrgData.buildIdUri(id), null, null);
-        OrgFile.updateFile(this, context);
+        OrgFileOld.updateFile(this, context);
     }
 
     /**
@@ -431,7 +431,7 @@ public class OrgNode {
         if (deadline != null) {
             deadline.update(context, id, fileId);
         }
-        OrgFile.updateFile(this, context);
+        OrgFileOld.updateFile(this, context);
         return id;
     }
 }

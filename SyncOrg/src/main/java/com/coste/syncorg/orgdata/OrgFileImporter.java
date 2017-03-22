@@ -9,8 +9,13 @@ import com.coste.syncorg.gui.FileDecryptionActivity;
 import com.coste.syncorg.util.FileUtils;
 import com.coste.syncorg.util.PreferenceUtils;
 
+import org.cowboyprogrammer.org.OrgFile;
+import org.cowboyprogrammer.org.parser.RegexParser;
+
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Stack;
@@ -21,21 +26,16 @@ import javax.inject.Singleton;
 
 @Singleton
 public class OrgFileImporter {
-    public static final String BLOCK_SEPARATOR_PREFIX = "#HEAD#";
     private static final Pattern starPattern = Pattern.compile("^(\\**)\\s");
-    private static final String fileMatchPattern = "\\[file:(.*?)\\]\\[(.*?)\\]\\]";
     private static final Pattern getTodos = Pattern
             .compile("#\\+TODO:([^\\|]+)(\\| (.*))*");
-    private static final Pattern getPriorities = Pattern
-            .compile("#\\+ALLPRIORITIES:([^\\n]+)");
-    private static final Pattern getTags = Pattern.compile("#\\+TAGS:([^\\n]+)");
-    static private OrgFileImporter mInstance;
+
     private Context context;
     private ContentResolver resolver;
     private OrgDatabase db;
     private ParseStack parseStack;
     private StringBuilder payload;
-    private OrgFile orgFile;
+    private OrgFileOld orgFile;
     private OrgNodeParser orgNodeParser;
     private HashSet<String> excludedTags;
     private HashMap<Integer, Integer> position;
@@ -85,66 +85,58 @@ public class OrgFileImporter {
         return result;
     }
 
-    private static void decryptAndParseFile(OrgFile orgFile, BufferedReader reader, Context context) {
+    private void decryptAndParseFile(String orgFilePath, BufferedReader reader, Context context) {
         try {
             Intent intent = new Intent(context, FileDecryptionActivity.class);
             intent.putExtra("data", FileUtils.read(reader).getBytes());
-            intent.putExtra("filename", orgFile.filename);
-            intent.putExtra("filenameAlias", orgFile.name);
+            intent.putExtra("filename", orgFilePath);
+            intent.putExtra("filenameAlias", getFileNameFromPath(orgFilePath));
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
         } catch (IOException e) {
         }
     }
 
+    private String getFileNameFromPath(String path) {
+        return new File(path).getName();
+    }
+
+    private boolean isEncrypted(String filename) {
+        return filename.endsWith(".gpg") || filename.endsWith(".pgp")
+                || filename.endsWith(".enc") || filename.endsWith(".asc");
+    }
+
     /**
      * Remove old file from DB, decrypt file if encrypted and then parse
-     *
      */
-    public void parseFile(OrgFile orgFile, BufferedReader breader, Context context) {
-        if (orgFile.isEncrypted())
-            //TODO check
-            decryptAndParseFile(orgFile, breader, context);
-        else {
-            parse(orgFile, breader, context);
+    public boolean parseFile(String orgFilePath, BufferedReader breader, Context context) {
+        if (isEncrypted(orgFilePath)) {
+            decryptAndParseFile(orgFilePath, breader, context);
+            return true;
+        } else {
+            try {
+                parse(orgFilePath, breader);
+                return true;
+            } catch (IOException | ParseException e) {
+                e.printStackTrace();
+            }
+            return false;
         }
     }
 
-    private void init(OrgFile orgFile) {
-        orgFile.removeFile(context, false);
-        orgFile.addFile(context);
-        this.orgFile = orgFile;
-
-        this.parseStack = new ParseStack();
-        this.parseStack.add(0, orgFile.nodeId, "");
-
-        this.payload = new StringBuilder();
-
-        this.orgNodeParser = new OrgNodeParser(
-                OrgProviderUtils.getTodos(resolver));
-
-        this.position = new HashMap<>();
-    }
-
-    public void parse(OrgFile orgFile, BufferedReader breader, Context context) {
+    private void parse(String orgFile, BufferedReader breader) throws IOException, ParseException {
         this.excludedTags = PreferenceUtils.getExcludedTags();
 
-        parse(orgFile, breader);
-    }
+        OrgFile.createFromBufferedReader(new RegexParser("TODO", "DONE"), getFileNameFromPath(orgFile), breader);
 
-    private void parse(OrgFile orgFile, BufferedReader breader) {
-        init(orgFile);
         db.beginTransaction();
 
-        try {
-            String currentLine;
-            while ((currentLine = breader.readLine()) != null) parseLine(currentLine);
+        String currentLine;
+        while ((currentLine = breader.readLine()) != null) parseLine(currentLine);
 
-            // Add payload to the final node
-            db.fastInsertNodePayload(parseStack.getCurrentNodeId(), this.payload.toString());
+        // Add payload to the final node
+        db.fastInsertNodePayload(parseStack.getCurrentNodeId(), this.payload.toString());
 
-        } catch (IOException e) {
-        }
 
         db.endTransaction();
 
@@ -170,7 +162,7 @@ public class OrgFileImporter {
     private void parseHeading(String thisLine, int numstars) {
         int currentLevel = parseStack.getCurrentLevel();
 
-        if (position.get(numstars - 1) == null) position.put(numstars - 1, 0);
+        position.putIfAbsent(numstars - 1, 0);
         if (numstars <= currentLevel) {
             int value = position.get(numstars - 1);
             position.put(numstars - 1, value + 1);

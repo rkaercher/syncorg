@@ -18,7 +18,7 @@ import android.widget.TextView;
 import com.coste.syncorg.OrgNodeDetailActivity;
 import com.coste.syncorg.R;
 import com.coste.syncorg.orgdata.OrgContract;
-import com.coste.syncorg.orgdata.OrgFile;
+import com.coste.syncorg.orgdata.OrgFileOld;
 import com.coste.syncorg.orgdata.OrgNode;
 import com.coste.syncorg.orgdata.OrgProviderUtils;
 import com.coste.syncorg.util.OrgFileNotFoundException;
@@ -131,7 +131,7 @@ public class SearchActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View view) {
                     try {
-                        OrgFile file = new OrgFile(node.fileId, getContentResolver());
+                        OrgFileOld file = new OrgFileOld(node.fileId, getContentResolver());
                         Intent intent = new Intent(SearchActivity.this, OrgNodeDetailActivity.class);
                         intent.putExtra(OrgContract.NODE_ID, file.nodeId);
                         intent.putExtra(OrgContract.POSITION, node.id);

@@ -2,14 +2,12 @@ package com.coste.syncorg.synchronizers;
 
 import android.content.ContentResolver;
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 import android.text.TextUtils;
 
 import com.coste.syncorg.R;
 import com.coste.syncorg.gui.SynchronizerNotification;
 import com.coste.syncorg.gui.SynchronizerNotificationCompat;
-import com.coste.syncorg.orgdata.OrgFile;
+import com.coste.syncorg.orgdata.OrgFileOld;
 import com.coste.syncorg.orgdata.OrgFileImporter;
 import com.coste.syncorg.util.OrgUtils;
 
@@ -25,7 +23,6 @@ import java.util.HashSet;
  * This class implements many of the operations that need to be done on
  * synching.
  * <p/>
-
  */
 public abstract class Synchronizer {
     public static final String SYNC_UPDATE = "com.coste.syncorg.Synchronizer.action.SYNC_UPDATE";
@@ -58,7 +55,6 @@ public abstract class Synchronizer {
 
     /**
      * Instanciate a synchronizer and start a synchronization if not already running
-     *
      */
     public void runSynchronize() {
         Thread syncThread = new Thread() {
@@ -109,18 +105,18 @@ public abstract class Synchronizer {
             SyncResult pulledFiles = synchronize();
 
             for (String filename : pulledFiles.deletedFiles) {
-                OrgFile orgFile = new OrgFile(filename, resolver);
-                orgFile.removeFile(context, true);
+                OrgFileOld orgFile = new OrgFileOld(filename, resolver);
+                orgFile.removeFile(context, true); // FIXME: trigger dao here
             }
 
             HashSet<String> modifiedFiles = pulledFiles.newFiles;
             modifiedFiles.addAll(pulledFiles.changedFiles);
             for (String filename : modifiedFiles) {
-                OrgFile orgFile = new OrgFile(filename, getRelativeFilePath(filename));
-                FileReader fileReader = new FileReader(filename);
-                BufferedReader bufferedReader = new BufferedReader(fileReader);
-                importer.parseFile(orgFile, bufferedReader, context);
-                orgFile.updateTimeModified(context);
+                if (filename.startsWith(".")) continue; // no hidden files
+                File file = new File(filename);
+                try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
+                    importer.parseFile(file.getAbsolutePath(), bufferedReader, context);
+                }
             }
 
             announceSyncDone();
@@ -128,21 +124,6 @@ public abstract class Synchronizer {
             showErrorNotification(e);
             e.printStackTrace();
         }
-    }
-
-    /**
-     * Return the relative path of the file starting at the root of the synced folder
-     * If the file is not in this folder, it will return the absolute path instead
-     *
-     * @param filename
-     * @return
-     */
-    private String getRelativeFilePath(String filename) {
-        String filesDir = getAbsoluteFilesDir() + "/";
-        if (filename.substring(0, filesDir.length()).equals(filesDir)) {
-            return filename.substring(filesDir.length());
-        }
-        return filename;
     }
 
     private void announceStartSync() {

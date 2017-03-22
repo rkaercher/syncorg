@@ -12,7 +12,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 
 import com.coste.syncorg.R;
-import com.coste.syncorg.orgdata.OrgFile;
+import com.coste.syncorg.orgdata.OrgFileOld;
 import com.coste.syncorg.orgdata.OrgNode;
 import com.coste.syncorg.synchronizers.Synchronizer;
 
@@ -94,7 +94,7 @@ public class OrgUtils {
         if (filename.indexOf(":") > -1)
             filename = filename.substring(0, filename.indexOf(":"));
 
-        OrgFile file = new OrgFile(filename, resolver);
+        OrgFileOld file = new OrgFileOld(filename, resolver);
         return file.nodeId;
     }
 

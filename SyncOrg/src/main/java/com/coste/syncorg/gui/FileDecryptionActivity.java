@@ -9,8 +9,6 @@ import android.os.Bundle;
 import android.widget.Toast;
 
 import com.coste.syncorg.R;
-import com.coste.syncorg.orgdata.OrgDatabase;
-import com.coste.syncorg.orgdata.OrgFile;
 import com.coste.syncorg.orgdata.OrgFileImporter;
 import com.coste.syncorg.orgdata.SyncOrgApplication;
 
@@ -77,7 +75,8 @@ public class FileDecryptionActivity extends Activity {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(
                         new ByteArrayInputStream(decryptedData.getBytes())));
 
-                importer.parse(new OrgFile(filename, name), reader, this);
+                //TODO re-enable
+              //  importer.parse(new OrgFileOld(filename, name), reader);
                 break;
         }
         finish();

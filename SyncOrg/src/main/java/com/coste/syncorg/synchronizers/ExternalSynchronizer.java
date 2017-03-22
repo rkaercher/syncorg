@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
-import com.coste.syncorg.orgdata.OrgFile;
+import com.coste.syncorg.orgdata.OrgFileOld;
 import com.coste.syncorg.orgdata.OrgFileImporter;
 import com.coste.syncorg.services.PermissionManager;
 
@@ -70,7 +70,7 @@ public class ExternalSynchronizer extends Synchronizer {
 
         ArrayList<File> files = getFilesRecursively(new File(getAbsoluteFilesDir()));
 
-        HashMap<String, Long> times_modified = OrgFile.getLastModifiedTimes(context);
+        HashMap<String, Long> times_modified = OrgFileOld.getLastModifiedTimes(context);
         result.deletedFiles = new TreeSet<>(times_modified.keySet());
 
         for (File f : files) {

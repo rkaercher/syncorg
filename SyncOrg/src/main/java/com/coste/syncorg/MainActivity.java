@@ -27,7 +27,7 @@ import android.widget.Toast;
 import com.coste.syncorg.gui.SearchActivity;
 import com.coste.syncorg.gui.outline.MainAdapter;
 import com.coste.syncorg.gui.wizard.WizardActivity;
-import com.coste.syncorg.orgdata.OrgFile;
+import com.coste.syncorg.orgdata.OrgFileOld;
 import com.coste.syncorg.orgdata.SyncOrgApplication;
 import com.coste.syncorg.settings.SettingsActivity;
 import com.coste.syncorg.synchronizers.Synchronizer;
@@ -123,7 +123,7 @@ public class MainActivity extends AppCompatActivity {
                 alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         String filename = input.getText().toString();
-                        OrgFile newFile = new OrgFile(filename, filename);
+                        OrgFileOld newFile = new OrgFileOld(filename, filename);
                         File file = new File(newFile.getFilePath());
                         if (file.exists()) {
                             Toast.makeText(MainActivity.this, R.string.file_exists, Toast.LENGTH_SHORT)

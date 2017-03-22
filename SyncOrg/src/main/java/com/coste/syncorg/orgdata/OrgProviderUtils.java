@@ -39,7 +39,7 @@ public class OrgProviderUtils {
         cursor.moveToFirst();
 
         while (!cursor.isAfterLast()) {
-            OrgFile orgFile = new OrgFile();
+            OrgFileOld orgFile = new OrgFileOld();
 
             try {
                 orgFile.set(cursor);
@@ -60,8 +60,8 @@ public class OrgProviderUtils {
      * @param resolver
      * @return
      */
-    public static ArrayList<OrgFile> getFiles(ContentResolver resolver) {
-        ArrayList<OrgFile> result = new ArrayList<>();
+    public static ArrayList<OrgFileOld> getFiles(ContentResolver resolver) {
+        ArrayList<OrgFileOld> result = new ArrayList<>();
 
         Cursor cursor = resolver.query(Files.CONTENT_URI, Files.DEFAULT_COLUMNS,
                 null, null, Files.DEFAULT_SORT);
@@ -69,7 +69,7 @@ public class OrgProviderUtils {
         cursor.moveToFirst();
 
         while (!cursor.isAfterLast()) {
-            OrgFile orgFile = new OrgFile();
+            OrgFileOld orgFile = new OrgFileOld();
 
             try {
                 orgFile.set(cursor);

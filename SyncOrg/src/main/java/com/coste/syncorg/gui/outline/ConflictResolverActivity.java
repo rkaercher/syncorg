@@ -15,7 +15,7 @@ import android.widget.EditText;
 import com.coste.syncorg.MainActivity;
 import com.coste.syncorg.R;
 import com.coste.syncorg.orgdata.OrgContract;
-import com.coste.syncorg.orgdata.OrgFile;
+import com.coste.syncorg.orgdata.OrgFileOld;
 import com.coste.syncorg.orgdata.SyncOrgApplication;
 import com.coste.syncorg.synchronizers.JGitWrapper;
 import com.coste.syncorg.synchronizers.Synchronizer;
@@ -56,7 +56,7 @@ public class ConflictResolverActivity extends AppCompatActivity {
 
             editText = (EditText) findViewById(R.id.conflict_resolver_text);
             try {
-                OrgFile file = new OrgFile(nodeId, getContentResolver());
+                OrgFileOld file = new OrgFileOld(nodeId, getContentResolver());
                 if (actionBar != null) {
                     actionBar.setTitle(file.name);
                 }
@@ -89,9 +89,9 @@ public class ConflictResolverActivity extends AppCompatActivity {
                 if (this.filename != null && !this.filename.equals("")) {
                     OrgUtils.writeToFile(this.filename, editText.getText().toString());
                     gitWrapper.createMergeTask(this, this.filename, synchronizer.getAbsoluteFilesDir()).execute();
-                    OrgFile f = null;
+                    OrgFileOld f = null;
                     try {
-                        f = new OrgFile(nodeId, this.getContentResolver());
+                        f = new OrgFileOld(nodeId, this.getContentResolver());
                         ContentValues values = new ContentValues();
                         values.put("comment", "");
                         f.updateFileInDB(this.getContentResolver(), values);

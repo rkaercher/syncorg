@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 
-public class OrgFile {
+public class OrgFileOld {
     public static final String CAPTURE_FILE = "mobileorg.org";
     public static final String CAPTURE_FILE_ALIAS = "Captures";
     public static final String AGENDA_FILE = "agendas.org";
@@ -34,10 +34,10 @@ public class OrgFile {
     public long id = -1;
     public long nodeId = -1;
 
-    public OrgFile() {
+    public OrgFileOld() {
     }
 
-    public OrgFile(String filename, String name) {
+    public OrgFileOld(String filename, String name) {
         this.filename = filename;
 
         if (name == null || name.equals("null"))
@@ -46,11 +46,11 @@ public class OrgFile {
             this.name = name;
     }
 
-    public OrgFile(Cursor cursor) throws OrgFileNotFoundException {
+    public OrgFileOld(Cursor cursor) throws OrgFileNotFoundException {
         set(cursor);
     }
 
-    public OrgFile(long id, ContentResolver resolver) throws OrgFileNotFoundException {
+    public OrgFileOld(long id, ContentResolver resolver) throws OrgFileNotFoundException {
         Cursor cursor = resolver.query(Files.buildIdUri(id),
                 Files.DEFAULT_COLUMNS, null, null, null);
         if (cursor == null || cursor.getCount() < 1) {
@@ -62,7 +62,7 @@ public class OrgFile {
         cursor.close();
     }
 
-    public OrgFile(String filename, ContentResolver resolver) throws OrgFileNotFoundException {
+    public OrgFileOld(String filename, ContentResolver resolver) throws OrgFileNotFoundException {
         Cursor cursor = resolver.query(Files.CONTENT_URI,
                 Files.DEFAULT_COLUMNS, Files.FILENAME + "=?", new String[]{filename}, null);
         if (cursor == null || cursor.getCount() <= 0) {
@@ -83,7 +83,7 @@ public class OrgFile {
     static public void updateFile(OrgNode node, Context context) {
         ContentResolver resolver = context.getContentResolver();
         try {
-            OrgFile file = new OrgFile(node.fileId, resolver);
+            OrgFileOld file = new OrgFileOld(node.fileId, resolver);
             file.updateFile(file.toString(resolver), context);
         } catch (OrgFileNotFoundException e) {
             e.printStackTrace();
@@ -120,32 +120,14 @@ public class OrgFile {
                     cursor.getColumnIndexOrThrow(Files.COMMENT));
         } else {
             throw new OrgFileNotFoundException(
-                    "Failed to create OrgFile from cursor");
+                    "Failed to create OrgFileOld from cursor");
         }
     }
 
-    public boolean doesFileExist(ContentResolver resolver) {
-        Cursor cursor = resolver.query(Files.buildFilenameUri(filename),
-                Files.DEFAULT_COLUMNS, null, null, null);
-        int count = cursor.getCount();
-        cursor.close();
-
-        return count > 0;
-    }
-
-    public OrgNode getOrgNode(ContentResolver resolver) {
-        try {
-            return new OrgNode(this.nodeId, resolver);
-        } catch (OrgNodeNotFoundException e) {
-            throw new IllegalStateException("Org node for file " + filename
-                    + " should exist");
-        }
-    }
 
     /**
      * Add the file to the DB and create file on disk if does not exist
      *
-     * @param context
      */
     public void addFile(Context context) {
         ContentResolver resolver = context.getContentResolver();
@@ -250,7 +232,7 @@ public class OrgFile {
 
     /**
      * 1) Remove all OrgNode(s) associated with this file from the DB
-     * 2) Remove this OrgFile node from the DB
+     * 2) Remove this OrgFileOld node from the DB
      * 3) Remove file from disk
      *
      * @param context
@@ -307,12 +289,7 @@ public class OrgFile {
         return total;
     }
 
-    public boolean isEncrypted() {
-        return filename.endsWith(".gpg") || filename.endsWith(".pgp")
-                || filename.endsWith(".enc") || filename.endsWith(".asc");
-    }
-
-    public boolean equals(OrgFile file) {
+    public boolean equals(OrgFileOld file) {
         return filename.equals(file.filename) && name.equals(file.name);
     }
 

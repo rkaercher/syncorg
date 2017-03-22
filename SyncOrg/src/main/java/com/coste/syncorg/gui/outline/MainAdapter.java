@@ -31,7 +31,7 @@ import com.coste.syncorg.OrgNodeDetailFragment;
 import com.coste.syncorg.R;
 import com.coste.syncorg.gui.theme.DefaultTheme;
 import com.coste.syncorg.orgdata.OrgContract;
-import com.coste.syncorg.orgdata.OrgFile;
+import com.coste.syncorg.orgdata.OrgFileOld;
 import com.coste.syncorg.orgdata.OrgNode;
 import com.coste.syncorg.orgdata.OrgProviderUtils;
 import com.coste.syncorg.orgdata.SyncOrgApplication;
@@ -46,7 +46,7 @@ import javax.inject.Inject;
 
 public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
     private final AppCompatActivity activity;
-    public List<OrgFile> items = new ArrayList<>();
+    public List<OrgFileOld> items = new ArrayList<>();
     // Number of added items. Here it is two: Agenda and Todos.
     private int numExtraItems;
     private ActionMode actionMode;
@@ -116,7 +116,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
                     ArrayList<Uri> uris = new ArrayList<>();
                     for (Integer num : selectedItems) {
                         num -= numExtraItems;
-                        OrgFile file = items.get(num);
+                        OrgFileOld file = items.get(num);
                         File f = new File(file.getFilePath());
                         Uri fileUri = FileProvider.getUriForFile(activity, "com.coste.fileprovider", new File(f.getPath()));
                         uris.add(fileUri);
@@ -151,7 +151,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
     public void refresh() {
         clear();
 
-        for (OrgFile file : OrgProviderUtils.getFiles(resolver)) {
+        for (OrgFileOld file : OrgProviderUtils.getFiles(resolver)) {
             add(file);
         }
 
@@ -178,12 +178,12 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
     @Override
     public void onBindViewHolder(final OutlineItem holder, final int position) {
         final int positionInItems = position - numExtraItems;
-        OrgFile file = null;
+        OrgFileOld file = null;
         try {
             file = items.get(positionInItems);
         } catch (ArrayIndexOutOfBoundsException ignored) {
         }
-        final boolean conflict = (file != null && file.getState() == OrgFile.State.kConflict);
+        final boolean conflict = (file != null && file.getState() == OrgFileOld.State.kConflict);
         String title;
         if (position == 0) {
             title = activity.getResources().getString(R.string.menu_todos);
@@ -314,14 +314,14 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
         this.items.clear();
     }
 
-    public void add(OrgFile file) {
+    public void add(OrgFileOld file) {
         this.items.add(file);
     }
 
     @Override
     public long getItemId(int position) {
         if (position < numExtraItems) return -1;
-        OrgFile file = items.get(position - numExtraItems);
+        OrgFileOld file = items.get(position - numExtraItems);
         return file.nodeId;
     }
 
@@ -366,7 +366,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
         List<Integer> selectedItems = getSelectedItems();
         for (Integer num : selectedItems) {
             num -= numExtraItems;
-            OrgFile file = items.get(num);
+            OrgFileOld file = items.get(num);
             file.removeFile(activity, true);
         }
         synchronizer.runSynchronize();

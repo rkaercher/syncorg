@@ -1,15 +1,11 @@
 package com.coste.syncorg.orgdata.table;
 
-import com.yahoo.squidb.annotations.ModelMethod;
 import com.yahoo.squidb.annotations.PrimaryKey;
 import com.yahoo.squidb.annotations.TableModelSpec;
 
 import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
 import org.joda.time.LocalTime;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @TableModelSpec(className = "OrgNodeEntity", tableName = "node")
 public class OrgNodeSpec {

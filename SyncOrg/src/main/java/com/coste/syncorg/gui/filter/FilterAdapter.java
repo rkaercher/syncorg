@@ -12,14 +12,14 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 
 import com.coste.syncorg.R;
-import com.coste.syncorg.orgdata.OrgFile;
+import com.coste.syncorg.orgdata.OrgFileOld;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 
-class FilterAdapter extends ArrayAdapter<OrgFile> implements CompoundButton.OnCheckedChangeListener {
+class FilterAdapter extends ArrayAdapter<OrgFileOld> implements CompoundButton.OnCheckedChangeListener {
 
     private Activity context;
     private Set<Long> selectedIds = new HashSet<>();
@@ -38,7 +38,7 @@ class FilterAdapter extends ArrayAdapter<OrgFile> implements CompoundButton.OnCh
         CheckBox checkBox;
     }
 
-    FilterAdapter(@NonNull Activity context, @LayoutRes int resource, @NonNull List<OrgFile> objects, Set<Long> selectedIds) {
+    FilterAdapter(@NonNull Activity context, @LayoutRes int resource, @NonNull List<OrgFileOld> objects, Set<Long> selectedIds) {
         super(context, resource, objects);
         this.context = context;
         this.selectedIds = selectedIds;
@@ -53,7 +53,7 @@ class FilterAdapter extends ArrayAdapter<OrgFile> implements CompoundButton.OnCh
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
         View rowView = createOrReuseRowView(convertView);
         ViewHolder holder = (ViewHolder) rowView.getTag();
-        OrgFile file = getItem(position);
+        OrgFileOld file = getItem(position);
         if (file != null) {
             holder.checkBox.setText(file.name);
             holder.checkBox.setTag(file.id);

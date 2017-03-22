@@ -12,7 +12,7 @@ import android.view.View;
 import android.widget.Button;
 
 import com.coste.syncorg.R;
-import com.coste.syncorg.orgdata.OrgFile;
+import com.coste.syncorg.orgdata.OrgFileOld;
 import com.coste.syncorg.orgdata.OrgNode;
 import com.coste.syncorg.orgdata.OrgProviderUtils;
 
@@ -51,7 +51,7 @@ public class TodoDialog {
                                 setupTodoButton(context, node, button, false);
                                 if (writeChangeOnTodoChanged) {
                                     node.write(context);
-                                    OrgFile.updateFile(node, context);
+                                    OrgFileOld.updateFile(node, context);
                                 }
                             }
                         });
