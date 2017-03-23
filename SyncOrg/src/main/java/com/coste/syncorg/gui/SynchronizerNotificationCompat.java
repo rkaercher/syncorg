@@ -17,6 +17,7 @@ public class SynchronizerNotificationCompat {
     private Notification notification;
     private int notifyRef = 1;
     private Context context;
+    private RemoteViews contentView;
 
     public SynchronizerNotificationCompat(Context context) {
         this.context = context;
@@ -37,16 +38,17 @@ public class SynchronizerNotificationCompat {
         builder.setSmallIcon(R.drawable.icon);
         builder.setContentTitle("Synchronization failed");
 
-        notification = builder.getNotification();
-        notification.contentView = notification.contentView = new RemoteViews(
+        RemoteViews remoteViews = new RemoteViews(
                 context.getPackageName(), R.layout.sync_notification);
 
-        notification.contentView.setImageViewResource(R.id.status_icon,
+        remoteViews.setImageViewResource(R.id.status_icon,
                 R.drawable.icon);
-        notification.contentView.setTextViewText(R.id.status_text, errorMsg);
-        notification.contentView.setProgressBar(R.id.status_progress, 100, 100,
+        remoteViews.setTextViewText(R.id.status_text, errorMsg);
+        remoteViews.setProgressBar(R.id.status_progress, 100, 100,
                 false);
-        notificationManager.notify(notifyRef, notification);
+
+        builder.setCustomBigContentView(remoteViews);
+        notificationManager.notify(notifyRef, builder.build());
     }
 
     public void setupNotification() {
@@ -65,30 +67,21 @@ public class SynchronizerNotificationCompat {
         builder.setOngoing(true);
         builder.setContentTitle("Started synchronization");
         builder.setContentText("Started synchronization");
-        notification = builder.getNotification();
 
-        notification.contentView = new RemoteViews(context.getPackageName(),
+        contentView = new RemoteViews(context.getPackageName(),
                 R.layout.sync_notification);
 
-        notification.contentView.setImageViewResource(R.id.status_icon,
+        contentView.setImageViewResource(R.id.status_icon,
                 R.drawable.icon);
-        notification.contentView.setTextViewText(R.id.status_text,
+        contentView.setTextViewText(R.id.status_text,
                 context.getString(R.string.sync_synchronizing_changes));
-        notification.contentView.setProgressBar(R.id.status_progress, 100, 0,
+        contentView.setProgressBar(R.id.status_progress, 100, 0,
                 true);
+        builder.setCustomContentView(contentView);
 
-        notificationManager.notify(notifyRef, notification);
+        notificationManager.notify(notifyRef, builder.build());
     }
 
-    public void updateNotification(String message) {
-        if (notification == null)
-            return;
-
-        if (message != null) {
-            notification.contentView.setTextViewText(R.id.status_text, message);
-            notificationManager.notify(notifyRef, notification);
-        }
-    }
 
     public void updateNotification(int progress) {
         updateNotification(progress, null);

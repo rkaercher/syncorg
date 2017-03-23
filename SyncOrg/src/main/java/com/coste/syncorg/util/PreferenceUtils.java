@@ -15,8 +15,7 @@ public class PreferenceUtils {
     private static final int DEFAULT_FONTSIZE = 14;
 
 
-    public static HashSet<String> getExcludedTags() {
-        Context context = SyncOrgApplication.getContext();
+    public static HashSet<String> getExcludedTags(Context context) {
         String tags = PreferenceManager.getDefaultSharedPreferences(context).getString(
                 "excludeTagsInheritance", null);
 

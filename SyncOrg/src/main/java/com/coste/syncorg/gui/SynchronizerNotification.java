@@ -51,7 +51,6 @@ public class SynchronizerNotification extends SynchronizerNotificationCompat {
 
 
     @Override
-    @SuppressWarnings("deprecation")
     public void setupNotification() {
         this.notificationManager = (NotificationManager) context
                 .getSystemService(Context.NOTIFICATION_SERVICE);
@@ -68,20 +67,10 @@ public class SynchronizerNotification extends SynchronizerNotificationCompat {
         builder.setOngoing(true);
         builder.setContentTitle(context.getString(R.string.sync_synchronizing_changes));
         builder.setProgress(100, 0, true);
-        notification = builder.getNotification();
 
-        notificationManager.notify(notifyRef, notification);
+        notificationManager.notify(notifyRef, builder.build());
     }
 
-    @Override
-    public void updateNotification(String message) {
-        if (notification == null)
-            return;
-
-        if (message != null) {
-            notificationManager.notify(notifyRef, notification);
-        }
-    }
 
     @Override
     public void updateNotification(int progress) {
