@@ -24,7 +24,7 @@ public class OrgFileDaoTest {
         OrgFileNew orgFile = new OrgFileNew();
         orgFile.setCreated(DateTime.now());
         orgFile.setComment("a comment").setLastModified(DateTime.now());
-        dao.save(orgFile);
+       // dao.save(orgFile);
 
         String s = odb.getDatabasePath();
         assertTrue(odb.isOpen());

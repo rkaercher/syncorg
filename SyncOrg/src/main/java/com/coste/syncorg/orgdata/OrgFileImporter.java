@@ -94,7 +94,7 @@ public class OrgFileImporter {
 
         OrgFile orgFile = OrgFile.createFromBufferedReader(new RegexParser("TODO", "DONE"), getFileNameFromPath(orgFilePath), breader);
 
-        orgFileDao.save(createOrgFileEntity(orgFile));
+       FileEntity saved = orgFileDao.save(createOrgFileEntity(orgFile));
 
         saveNodesRecursive(orgFile.getSubNodes());
 
