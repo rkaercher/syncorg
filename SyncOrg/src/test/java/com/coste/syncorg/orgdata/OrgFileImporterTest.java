@@ -23,6 +23,11 @@ import java.io.StringReader;
 
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(RobolectricTestRunner.class)
@@ -43,19 +48,31 @@ public class OrgFileImporterTest {
         InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("org-testfile.org");
         OrgFileImporter sut = new OrgFileImporter(RuntimeEnvironment.application);
         sut.orgFileDao = this.orgFileDao;
-        sut.parseFile("/tmp/test.org", new BufferedReader(new InputStreamReader(inputStream)), RuntimeEnvironment.application);
 
         ArgumentCaptor<FileEntity> fileCaptor = ArgumentCaptor.forClass(FileEntity.class);
 
-        when(orgFileDao.save(fileCaptor.capture())).thenReturn(new FileEntity());
+        when(orgFileDao.save(argThat(argument ->
+                topFirstNode().equals(argument))))
+                .thenReturn(new FileEntity());
 
 
+        sut.parseFile("/tmp/test.org", new BufferedReader(new InputStreamReader(inputStream)), RuntimeEnvironment.application);
 
+
+        verify(orgFileDao,times(1)).save(argThat(argument ->
+                topFirstNode().equals(argument)));
+
+        assertEquals(topFirstNode(), fileCaptor.getValue());
 
     }
 
     private FileEntity topFirstNode() {
-        return new FileEntity().setComment("one line");
+        return new FileEntity()
+                .setComment("# These should2 be\n" +
+                        "# placed in the\n" +
+                        "# orgfile root\n").setDisplayName("test.org")
+                .setFileName("test.org")
+                ;
     }
 
 }
