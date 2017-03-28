@@ -15,7 +15,7 @@ public class NodeFilter {
         TODO
     }
 
-    private Integer filterId;
+    private Long filterId;
     private Set<Long> includedNodeIds;
     private String name;
     private FilterType type;
@@ -39,14 +39,14 @@ public class NodeFilter {
         this.name = DEFAULT;
     }
 
-    public NodeFilter(Integer filterId, Set<Long> includedNodeIds, String name, FilterType type) {
+    public NodeFilter(Long filterId, Set<Long> includedNodeIds, String name, FilterType type) {
         this.filterId = filterId;
         this.includedNodeIds = includedNodeIds;
         this.name = name;
         this.type = type;
     }
 
-    public Integer getFilterId() {
+    public Long getFilterId() {
         return filterId;
     }
 

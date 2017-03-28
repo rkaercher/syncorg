@@ -15,7 +15,8 @@ android {
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = [
-                        squidbPlugins: 'com.aminelaadhari.squidb.datetime.DateTimePlugin'
+                        squidbPlugins : 'com.aminelaadhari.squidb.datetime.DateTimePlugin',
+                        squidbOptions : 'androidModels'
                 ]
             }
 
@@ -43,7 +44,7 @@ ext {
     JUNIT_VERSION = '4.12'
     DAGGER_VERSION = '2.4'
     BUTTERKNIFE_VERSION = '8.4.0'
-    SQUIDB_VERSION = "3.2.3"
+    SQUIDB_VERSION = "4.0.0-beta.2"
     ANDROID_SUPPORT_VERSION = "24.0.0"
 }
 
@@ -87,5 +88,6 @@ dependencies {
     testAnnotationProcessor "com.google.dagger:dagger-compiler:$DAGGER_VERSION"
     testCompile "org.robolectric:robolectric:3.3.1"
     testCompile 'org.mockito:mockito-core:2.7.19'
+    testCompile 'de.danielbechler:java-object-diff:0.95-RC5'
 }
 

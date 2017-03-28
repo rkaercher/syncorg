@@ -1,29 +1,44 @@
 package com.aminelaadhari.squidb.datetime;
 
-import com.yahoo.aptutils.model.DeclaredTypeName;
-import com.yahoo.squidb.processor.data.ModelSpec;
-import com.yahoo.squidb.processor.plugins.Plugin;
-import com.yahoo.squidb.processor.plugins.PluginEnvironment;
+import com.squareup.javapoet.TypeName;
+import com.yahoo.squidb.processor.data.TableModelSpecWrapper;
+import com.yahoo.squidb.processor.plugins.defaults.properties.BaseFieldPlugin;
+import com.yahoo.squidb.processor.plugins.defaults.properties.generators.interfaces.TableModelPropertyGenerator;
+
+import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalDateTime;
+import org.joda.time.LocalTime;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.lang.model.element.VariableElement;
 
-public class DateTimePlugin extends Plugin {
+public class DateTimePlugin extends BaseFieldPlugin<TableModelSpecWrapper, TableModelPropertyGenerator> {
 
-    static final DeclaredTypeName JODA_DATETIME = new DeclaredTypeName("org.joda.time.DateTime");
-    static final DeclaredTypeName JODA_LOCALDATE = new DeclaredTypeName("org.joda.time.LocalDate");
-    static final DeclaredTypeName JODA_LOCALTIME = new DeclaredTypeName("org.joda.time.LocalTime");
-    private static final DeclaredTypeName JODA_LOCALDATETIME = new DeclaredTypeName("org.joda.time.LocalDateTime");
+    static final TypeName JODA_DATETIME = TypeName.get(DateTime.class);
+    static final TypeName JODA_LOCALDATE = TypeName.get(LocalDate.class);
+    static final TypeName JODA_LOCALTIME = TypeName.get(LocalTime.class);
+    private static final TypeName JODA_LOCALDATETIME = TypeName.get(LocalDateTime.class);
 
-    public DateTimePlugin(ModelSpec<?> modelSpec, PluginEnvironment pluginEnv) {
-        super(modelSpec, pluginEnv);
+    private static final Set<TypeName> supportedTypes = new HashSet<>(Arrays.asList(JODA_DATETIME, JODA_LOCALDATE, JODA_LOCALDATETIME, JODA_LOCALTIME));
+
+
+
+    @Override
+    protected TableModelPropertyGenerator getPropertyGenerator(VariableElement field, TypeName fieldType) {
+        return new DateTimePropertyGenerator(modelSpec, field, fieldType, pluginEnv);
     }
 
-    public boolean processVariableElement(VariableElement field, DeclaredTypeName fieldType) {
-        if (JODA_DATETIME.equals(fieldType) || JODA_LOCALDATE.equals(fieldType)
-                || JODA_LOCALTIME.equals(fieldType) || JODA_LOCALDATETIME.equals(fieldType)) {
-            modelSpec.addPropertyGenerator(new DateTimePropertyGenerator(modelSpec, field, fieldType, utils));
-            return true;
-        }
-        return false;
+    @Override
+    protected boolean hasPropertyGeneratorForField(VariableElement field, TypeName fieldType) {
+        return supportedTypes.contains(fieldType);
+    }
+
+    @Override
+    protected Class<TableModelSpecWrapper> getHandledModelSpecClass() {
+        return TableModelSpecWrapper.class;
     }
 }

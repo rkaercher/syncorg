@@ -9,6 +9,7 @@ import com.coste.syncorg.orgdata.OrgDatabase;
 import com.coste.syncorg.orgdata.OrgNode;
 import com.coste.syncorg.orgdata.table.FilterEntryTable;
 import com.coste.syncorg.orgdata.table.FilterTable;
+import com.coste.syncorg.orgdata.table.OrgNodeEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +24,13 @@ public class OrgNodeDao {
     @Inject
     OrgNodeDao(OrgDatabase db) {
         this.db = db;
+    }
+
+    public OrgNodeEntity save(OrgNodeEntity entity) {
+        if (this.db.persist(entity)) {
+            return entity;
+        }
+        return null;
     }
 
     public List<OrgNode> findTodoNodes() {

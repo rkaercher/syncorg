@@ -1,15 +1,13 @@
 package com.coste.syncorg.orgdata.table;
 
-import com.yahoo.squidb.annotations.PrimaryKey;
 import com.yahoo.squidb.annotations.TableModelSpec;
-
-import org.joda.time.LocalDate;
-import org.joda.time.LocalDateTime;
-import org.joda.time.LocalTime;
+import com.yahoo.squidb.annotations.tables.ColumnName;
+import com.yahoo.squidb.annotations.tables.constraints.PrimaryKey;
 
 @TableModelSpec(className = "OrgNodeEntity", tableName = "node")
-public class OrgNodeSpec {
+class OrgNodeSpec {
     @PrimaryKey
+    @ColumnName("_id")
     Long id;
     Long parentId;
     long fileId;
@@ -18,34 +16,8 @@ public class OrgNodeSpec {
     //TODO: tagsInherited
     String payload;
     String displayName;
-    int positionInFile;
-    LocalDateTime scheduledStartDateTime;
-    LocalTime scheduledEndTime;
-    boolean hasScheduledEndTime;
-    LocalDate deadlineDateTime;
-    boolean hasDeadlineTime;
+    int positionInParent;
+    String comment;
 
-//TODO: put in BO
-//    private TodoType todo;
-//    private List<OrgTag> tags = new ArrayList<>();
-//
-//    @ModelMethod
-//    public List<OrgTag> getTags() {
-//        return tags;
-//    }
-//
-//    @ModelMethod
-//    public void setTags(List<OrgTag> tags) {
-//        this.tags = tags;
-//    }
-//
-//    @ModelMethod
-//    public TodoType getTodo() {
-//        return todo;
-//    }
-//
-//    @ModelMethod
-//    public void setTodo(TodoType todo) {
-//        this.todo = todo;
-//    }
+    Long todoId;
 }

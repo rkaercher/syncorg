@@ -1,43 +1,41 @@
 package com.aminelaadhari.squidb.datetime;
 
-import com.yahoo.aptutils.model.DeclaredTypeName;
-import com.yahoo.aptutils.utils.AptUtils;
-import com.yahoo.aptutils.writer.JavaFileWriter;
-import com.yahoo.aptutils.writer.parameters.MethodDeclarationParameters;
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeName;
 import com.yahoo.squidb.processor.data.ModelSpec;
+import com.yahoo.squidb.processor.plugins.PluginEnvironment;
 import com.yahoo.squidb.processor.plugins.defaults.properties.generators.BasicLongPropertyGenerator;
-
-import java.io.IOException;
-import java.util.Set;
 
 import javax.lang.model.element.VariableElement;
 
-public class DateTimePropertyGenerator extends BasicLongPropertyGenerator {
-    private final DeclaredTypeName fieldType;
+class DateTimePropertyGenerator extends BasicLongPropertyGenerator {
+    private final TypeName fieldType;
 
-    public DateTimePropertyGenerator(ModelSpec<?> modelSpec, VariableElement field, DeclaredTypeName fieldType, AptUtils utils) {
-        super(modelSpec, field, utils);
+    DateTimePropertyGenerator(ModelSpec<?, ?> modelSpec, VariableElement field, TypeName fieldType,
+                              PluginEnvironment pluginEnv) {
+        super(modelSpec, field, pluginEnv);
         this.fieldType = fieldType;
     }
 
+
     // Add imports required by this property here
-    @Override
-    protected void registerAdditionalImports(Set<DeclaredTypeName> imports) {
-        super.registerAdditionalImports(imports);
-        imports.add(this.fieldType);
-    }
+//    @Override
+//    protected void registerAdditionalImports(Set<DeclaredTypeName> imports) {
+//        super.registerAdditionalImports(imports);
+//        super.
+//        imports.add(this.fieldType);
+//    }
 
     // Defines the type passed/returned in get/set
     @Override
-    public DeclaredTypeName getTypeForAccessors() {
+    public TypeName getTypeForAccessors() {
         return fieldType;
     }
 
-    // Generates getter implementation using the static helper class from earlier
-    @Override
-    protected void writeGetterBody(JavaFileWriter writer) throws IOException {
-        writer.writeStringStatement("Long instant = this.containsNonNullValue(" + propertyName + ") ? this.get(" + propertyName + ") : null");
-        writer.writeStringStatement("return instant == null ? null : new " + this.fieldType.getSimpleName() + "(instant)");
+    protected void writeGetterBody(CodeBlock.Builder body, MethodSpec methodParams) {
+        body.addStatement("$T instant = this.containsNonNullValue($L) ? this.get($L) : null", Long.class, propertyName, propertyName);
+        body.addStatement("return instant == null ? null : new $T(instant)", this.fieldType);
     }
 
     private String getMillisMethodCall() {
@@ -52,11 +50,9 @@ public class DateTimePropertyGenerator extends BasicLongPropertyGenerator {
         }
     }
 
-    // Generates setter implementation using the static helper class from earlier
-    @Override
-    protected void writeSetterBody(JavaFileWriter writer, MethodDeclarationParameters parameters) throws IOException {
-        String argName = parameters.getArgumentNames().get(0);
-        writer.writeStringStatement("this.set(" + propertyName + ", " + argName + " == null ? null : " + argName + "." + getMillisMethodCall() + ")");
-        writer.writeStringStatement("return this");
+    protected void writeSetterBody(CodeBlock.Builder body, MethodSpec methodParams) {
+        String argName = methodParams.parameters.get(0).name;
+        body.addStatement("this.set($L, $L == null ? null : $L.$L)", propertyName, argName, argName, getMillisMethodCall());
+        body.addStatement("return this");
     }
 }

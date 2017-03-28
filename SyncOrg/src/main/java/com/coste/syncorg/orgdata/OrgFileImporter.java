@@ -1,14 +1,17 @@
 package com.coste.syncorg.orgdata;
 
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
-import android.text.TextUtils;
 
 import com.coste.syncorg.dao.OrgFileDao;
+import com.coste.syncorg.dao.OrgNodeDao;
+import com.coste.syncorg.dao.TagDao;
+import com.coste.syncorg.dao.TimestampDao;
+import com.coste.syncorg.dao.TodoDao;
 import com.coste.syncorg.gui.FileDecryptionActivity;
 import com.coste.syncorg.orgdata.table.FileEntity;
 import com.coste.syncorg.orgdata.table.OrgNodeEntity;
+import com.coste.syncorg.orgdata.table.TimestampEntity;
 import com.coste.syncorg.util.FileUtils;
 import com.coste.syncorg.util.PreferenceUtils;
 
@@ -20,12 +23,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Stack;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -34,16 +33,24 @@ import static junit.framework.Assert.assertTrue;
 
 @Singleton
 public class OrgFileImporter {
-    private static final Pattern starPattern = Pattern.compile("^(\\**)\\s");
-    private static final Pattern getTodos = Pattern
-            .compile("#\\+TODO:([^\\|]+)(\\| (.*))*");
-
-    private OrgFileOld orgFile;
     private HashSet<String> excludedTags;
 
 
     @Inject
     OrgFileDao orgFileDao;
+
+    @Inject
+    OrgNodeDao orgNodeDao;
+
+    @Inject
+    TimestampDao timestampDao;
+
+    @Inject
+    TagDao tagDao;
+
+    @Inject
+    TodoDao todoDao;
+
     private  Context context;
 
     public OrgFileImporter(Context context) {
@@ -97,29 +104,79 @@ public class OrgFileImporter {
         FileEntity orgFileEntity = createOrgFileEntity(orgFile);
         FileEntity saved = orgFileDao.save(orgFileEntity);
 
-        saveNodesRecursive(orgFile.getSubNodes());
+        saveNodesRecursive(orgFile.getSubNodes(), saved.getId(), null);
 
-        List<String> s = orgFile.getTags();
-        assertTrue(true);
     }
 
-    private void saveNodesRecursive(List<org.cowboyprogrammer.org.OrgNode> nodes) {
-        OrgNodeEntity entity = new OrgNodeEntity();
+    private void saveNodesRecursive(List<OrgNode> nodes, Long fileId, Long parentId) {
         for (int idx = 0;idx < nodes.size(); idx++) {
-            entity.clear();
             OrgNode node = nodes.get(idx);
-            entity.setDisplayName(node.getTitle());
-            entity.setLevel(node.getLevel());
-            entity.setPayload(node.getBody());
-            entity.setPositionInFile(idx);
-            // TODO tags
+            OrgNodeEntity savedEntity = saveNode(fileId, parentId, idx, node);
+            if (!node.getTimestamps().isEmpty()) {
+                saveTimestamps(node.getTimestamps(), savedEntity.getId());
+            }
+            if (!node.getTags().isEmpty()) {
+                saveTags(savedEntity.getId(), node.getTags(), false);
+            }
+
+            if (!node.getSubNodes().isEmpty()) {
+                saveNodesRecursive(node.getSubNodes(), fileId, savedEntity.getId());
+            }
         }
+    }
+
+    private void saveTags(long nodeId, List<String> tags, boolean inherited) {
+        for (String tag : tags) {
+            tagDao.tagNodeWith(nodeId, tag, inherited);
+        }
+    }
+
+    private void saveTimestamps(List<OrgTimestamp> timestamps, long nodeId) {
+        for (OrgTimestamp timestamp : timestamps) {
+            TimestampEntity entity = new TimestampEntity();
+            entity.setNodeId(nodeId);
+            entity.setStartDate(timestamp.getDate().toLocalDate());
+            if (timestamp.hasTime()) {
+                entity.setStartTime(timestamp.getDate().toLocalTime());
+            }
+            if (timestamp.getEndTime() != null) {
+                entity.setEndDate(entity.getStartDate());
+                entity.setEndTime(timestamp.getEndTime());
+            }
+            entity.setType(getTimestampType(timestamp));
+            entity.setIsInActive(timestamp.isInactive());
+            timestampDao.save(entity);
+        }
+    }
+
+    private TimestampType getTimestampType(OrgTimestamp timestamp) {
+        switch (timestamp.getType()) {
+            case PLAIN:
+                return TimestampType.PLAIN;
+            case SCHEDULED:
+                return TimestampType.SCHEDULED;
+            case DEADLINE:
+                return TimestampType.DEADLINE;
+        }
+        return TimestampType.PLAIN;
+    }
+
+    private OrgNodeEntity saveNode(Long fileId, Long parentId, int idx, OrgNode node) {
+        OrgNodeEntity entity = new OrgNodeEntity();
+        entity.setDisplayName(node.getTitle().trim());
+        entity.setLevel(node.getLevel());
+        entity.setPayload(node.getBody());
+        entity.setPositionInParent(idx);
+        entity.setFileId(fileId);
+        entity.setParentId(parentId);
+        entity.setComment(node.getComments());
+        return orgNodeDao.save(entity);
     }
 
     private FileEntity createOrgFileEntity(OrgFile orgFile) {
         FileEntity result = new FileEntity();
         result.setComment(orgFile.getComments());
-        result.setFileName(orgFile.getFilename());
+        result.setFilePath(orgFile.getFilename());
         result.setDisplayName(getFileNameFromPath(orgFile.getFilename()));
 
         return result;

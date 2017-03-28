@@ -21,7 +21,7 @@ public class OrgFileNew {
     }
 
     public String getFileName() {
-        return fileEntity.getFileName();
+        return fileEntity.getFilePath();
     }
 
     public String getDisplayName() {
@@ -41,7 +41,7 @@ public class OrgFileNew {
     }
 
     public FileEntity setFileName(String fileName) {
-        return fileEntity.setFileName(fileName);
+        return fileEntity.setFilePath(fileName);
     }
 
     public FileEntity setDisplayName(String displayName) {

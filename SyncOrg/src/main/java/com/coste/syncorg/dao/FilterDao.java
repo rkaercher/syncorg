@@ -7,6 +7,8 @@ import android.text.TextUtils;
 
 import com.coste.syncorg.orgdata.NodeFilter;
 import com.coste.syncorg.orgdata.OrgDatabase;
+import com.coste.syncorg.orgdata.table.FilterEntity;
+import com.coste.syncorg.orgdata.table.FilterEntryEntity;
 import com.coste.syncorg.orgdata.table.FilterEntryTable;
 import com.coste.syncorg.orgdata.table.FilterTable;
 
@@ -27,43 +29,38 @@ public class FilterDao {
     }
 
     public boolean saveFilter(NodeFilter filter) {
-        ContentValues values = new ContentValues();
-//        values.put(FilterTable.FIELD_NAME, filter.getName());
-//        values.put(FilterTable.FIELD_TYPE, filter.getType().ordinal());
-//
-//        long executionResult = -1;
-//
-//        final long filterId;
-//
-//        try {
-//            db.getWritableDatabase().beginTransaction();
-//            if (filter.getFilterId() != null) {
-//                filterId = filter.getFilterId();
-//                values.put(FilterTable.FIELD_ID, filter.getFilterId());
-//                executionResult = db.getWritableDatabase().update(FilterTable.name, values, fieldSelection(FilterTable.FIELD_ID), new String[]{filter.getFilterId().toString()});
-//                db.getWritableDatabase().delete(FilterEntryTable.name, fieldSelection(FilterEntryTable.FIELD_FILTER_ID), new String[]{filter.getFilterId().toString()});
-//            } else {
-//                filterId = db.getWritableDatabase().insert(FilterTable.name, null, values);
-//            }
-//            saveFilterFileIds(filter, filterId);
-//            db.getWritableDatabase().setTransactionSuccessful();
-//        } finally {
-//            db.getWritableDatabase().endTransaction();
-//        }
-//
-//        return executionResult > -1; // TODO make this meaningful
+        db.beginTransaction();
+        try {
+
+            FilterEntity filterEntity = null;
+            if (filter.getFilterId() != null) {
+                filterEntity = db.fetchByCriterion(FilterEntity.class, FilterEntity.ID.is(filter.getFilterId()));
+                db.deleteWhere(FilterEntryEntity.class, FilterEntryEntity.FILTER_ID.is(filter.getFilterId()));
+            }
+            if (filterEntity == null) {
+                filterEntity = new FilterEntity();
+            }
+
+            filterEntity.setName(filter.getName());
+            //TODO implement
+//        filterEntity.setComment()
+            db.persist(filterEntity);
+
+            for (Long fileId : filter.getIncludedNodeIds()) {
+                db.persist(new FilterEntryEntity().
+                        setFileId(fileId).
+                        setFilterId(filterEntity.getId()));
+            }
+
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+
+
         return true;
     }
 
-//    private void saveFilterFileIds(NodeFilter filter, long filterId) {
-//        ContentValues values = new ContentValues(2);
-//        values.put(FilterEntryTable.FIELD_FILTER_ID, filterId);
-//
-//        for (Long id : filter.getIncludedNodeIds()) {
-//            values.put(FilterEntryTable.FIELD_FILE_ID, id);
-//            db.getWritableDatabase().insert(FilterEntryTable.name, null, values);
-//        }
-//    }
 
     public NodeFilter loadFilter(NodeFilter.FilterType type) {
 //        Cursor cursor = db.getReadableDatabase().query(FilterTable.name, new String[]{FilterTable.FIELD_ID, FilterTable.FIELD_NAME}, and(fieldSelection(FilterTable.FIELD_TYPE), fieldSelection(FilterTable.FIELD_NAME)), new String[]{String.valueOf(type.ordinal()), "DEFAULT"}, null, null, null);

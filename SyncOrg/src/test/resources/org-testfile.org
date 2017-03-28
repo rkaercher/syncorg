@@ -23,10 +23,10 @@ A third little
 piggy wasn't
 that little
 
-** one two :ot:
+** TODO one two                                                          :ot:
 A boxing combination
 
-** one three :oT:
+** DONE [#B] one three                                                   :oT:
 
 Leading newline on me
 
@@ -35,7 +35,7 @@ Leading newline on me
 - After
 - One
 
-*** two skip one :TTT:
+*** two skip one                                                    :TTT:bla:
 Goes straight
 /to/ *one*.
 

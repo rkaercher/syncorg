@@ -21,7 +21,8 @@ public class OrgFileDao {
     }
 
     public FileEntity save(FileEntity orgFile) {
-      Query query =  Query.select(FileEntity.ID).from(FileEntity.TABLE).where(FileEntity.FILE_NAME.is(orgFile.getFileName()));
+        //// TODO: 3/26/17 use upsert here
+      Query query =  Query.select(FileEntity.ID).from(FileEntity.TABLE).where(FileEntity.FILE_PATH.is(orgFile.getFilePath()));
         SquidCursor<FileEntity> cursor = db.query(FileEntity.class, query);
         if (cursor.moveToFirst()) {
             orgFile.setId(cursor.get(FileEntity.ID));
