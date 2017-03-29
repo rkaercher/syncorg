@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -104,14 +105,16 @@ public class OrgFileImporter {
         FileEntity orgFileEntity = createOrgFileEntity(orgFile);
         FileEntity saved = orgFileDao.save(orgFileEntity);
 
-        saveNodesRecursive(orgFile.getSubNodes(), saved.getId(), null);
+        Map<String, Long> todoMappings = todoDao.getTodoIdMappings();
+        saveNodesRecursive(orgFile.getSubNodes(), saved.getId(), null, todoMappings);
 
     }
 
-    private void saveNodesRecursive(List<OrgNode> nodes, Long fileId, Long parentId) {
+    private void saveNodesRecursive(List<OrgNode> nodes, Long fileId, Long parentId, Map<String, Long> todoMappings) {
         for (int idx = 0;idx < nodes.size(); idx++) {
             OrgNode node = nodes.get(idx);
-            OrgNodeEntity savedEntity = saveNode(fileId, parentId, idx, node);
+            Long todoId = getTodoId(node, todoMappings);
+            OrgNodeEntity savedEntity = saveNode(fileId, parentId, idx, node, todoId);
             if (!node.getTimestamps().isEmpty()) {
                 saveTimestamps(node.getTimestamps(), savedEntity.getId());
             }
@@ -120,9 +123,17 @@ public class OrgFileImporter {
             }
 
             if (!node.getSubNodes().isEmpty()) {
-                saveNodesRecursive(node.getSubNodes(), fileId, savedEntity.getId());
+                saveNodesRecursive(node.getSubNodes(), fileId, savedEntity.getId(), todoMappings);
             }
         }
+    }
+
+    private Long getTodoId(OrgNode node, Map<String, Long> todoMappings) {
+        Long result = null;
+        if (node.getTodo() != null && !node.getTodo().isEmpty()) {
+            result = todoMappings.get(node.getTodo());
+        }
+        return result;
     }
 
     private void saveTags(long nodeId, List<String> tags, boolean inherited) {
@@ -161,7 +172,7 @@ public class OrgFileImporter {
         return TimestampType.PLAIN;
     }
 
-    private OrgNodeEntity saveNode(Long fileId, Long parentId, int idx, OrgNode node) {
+    private OrgNodeEntity saveNode(Long fileId, Long parentId, int idx, OrgNode node, Long todoId) {
         OrgNodeEntity entity = new OrgNodeEntity();
         entity.setDisplayName(node.getTitle().trim());
         entity.setLevel(node.getLevel());
@@ -170,6 +181,7 @@ public class OrgFileImporter {
         entity.setFileId(fileId);
         entity.setParentId(parentId);
         entity.setComment(node.getComments());
+        entity.setTodoId(todoId);
         return orgNodeDao.save(entity);
     }
 

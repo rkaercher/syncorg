@@ -112,15 +112,23 @@ public class SSHSynchronizer extends Synchronizer {
 
         if (isCredentialsRequired()) return new SyncResult();
         String folder = getAbsoluteFilesDir();
-        SyncResult pullResult = withAbsolutePaths(folder, gitWrapper.pull(context, folder));
 
-        gitWrapper.createPushTask(context, getAbsoluteFilesDir()).execute();
+        //// TODO: 28.03.17 reactivate
+        //   SyncResult pullResult = withAbsolutePaths(folder, gitWrapper.pull(context, folder));
+
+        //   gitWrapper.createPushTask(context, getAbsoluteFilesDir()).execute();
+
+        SyncResult pullResult = new SyncResult();
+        for (File filePath : new File("/sdcard/SyncOrg/SyncOrg").listFiles()) {
+            if (!filePath.getName().startsWith(".")) {
+                pullResult.newFiles.add(filePath.getAbsolutePath());
+            }
+        }
         return pullResult;
     }
 
     /**
      * Except if authentication by Public Key, the user has to enter his password
-     *
      */
     public boolean isCredentialsRequired() {
         return false;

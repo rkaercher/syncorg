@@ -8,15 +8,12 @@ import com.coste.syncorg.dao.TimestampDao;
 import com.coste.syncorg.dao.TodoDao;
 import com.coste.syncorg.orgdata.table.FileEntity;
 import com.coste.syncorg.orgdata.table.OrgNodeEntity;
-import com.coste.syncorg.orgdata.table.TagEntity;
 import com.coste.syncorg.orgdata.table.TimestampEntity;
 
 import org.joda.time.LocalDate;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
@@ -151,26 +148,26 @@ public class OrgFileImporterTest {
                 nodeEntity("one", 1, null, "<2014-02-26 Wed 17:00 -3w +2d>\n" +
                         "<2014-02-26 Wed 17:00-19:30 -3w +2d>\n" +
                         "\n" +
-                        "One little piggy went to the bank\n", 0, ""),
+                        "One little piggy went to the bank\n", 0, "", null),
                 nodeEntity("one one", 2, 0L, "A second little piggy\n" +
                         "went to another\n" +
-                        "bank\n", 0, ""),
+                        "bank\n", 0, "", null),
                 nodeEntity("one one one", 3, 1L, "A third little\n" +
                         "piggy wasn't\n" +
-                        "that little\n", 0, ""),
-                nodeEntity("one two", 2, 0L, "A boxing combination\n", 1, ""),
+                        "that little\n", 0, "", null),
+                nodeEntity("one two", 2, 0L, "A boxing combination\n", 1, "", TODO_ID_TODO),
                 nodeEntity("[#B] one three", 2, 0L, "\n" +
-                        "Leading newline on me\n", 2, ""),
+                        "Leading newline on me\n", 2, "", TODO_ID_DONE),
                 nodeEntity("two", 1, null, "- Number\n" +
                         "- After\n" +
-                        "- One\n", 1, ""),
+                        "- One\n", 1, "", null),
                 nodeEntity("two skip one", 3, 5L, "Goes straight\n" +
-                        "/to/ *one*.\n", 0, ""),
+                        "/to/ *one*.\n", 0, "", null),
                 nodeEntity("Commented test", 1, null, "\n" +
-                        "Bla bla bla\n", 2, "# NONSENSEID: 02DS2G\n")};
+                        "Bla bla bla\n", 2, "# NONSENSEID: 02DS2G\n", null)};
     }
 
-    private OrgNodeEntity nodeEntity(String displayName, int level, Long parentId, String payload, int positionInParent, String comment) {
+    private OrgNodeEntity nodeEntity(String displayName, int level, Long parentId, String payload, int positionInParent, String comment, Long todoId) {
         return new OrgNodeEntity().
                 setFileId(FILE_ID).
                 setDisplayName(displayName).
@@ -178,7 +175,8 @@ public class OrgFileImporterTest {
                 setParentId(parentId).
                 setPayload(payload).
                 setPositionInParent(positionInParent).
-                setComment(comment);
+                setComment(comment).
+                setTodoId(todoId);
     }
 
     private FileEntity fileEntity() {

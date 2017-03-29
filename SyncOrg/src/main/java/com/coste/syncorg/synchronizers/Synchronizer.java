@@ -81,16 +81,12 @@ public abstract class Synchronizer {
      * Return true if the user has to enter its credentials when the app starts
      * eg. SSHSynchonizer by password returns yes
      *
-     * @return
      */
     public boolean isCredentialsRequired() {
         return false;
     }
 
 
-    /**
-     * @return List of files that where changed.
-     */
     private void execute() {
         if (!isConfigured()) {
             notify.errorNotification("Sync not configured");
@@ -106,13 +102,13 @@ public abstract class Synchronizer {
 
             for (String filename : pulledFiles.deletedFiles) {
                 OrgFileOld orgFile = new OrgFileOld(filename, resolver);
-                orgFile.removeFile(context, true); // FIXME: trigger dao here
+        //        orgFile.removeFile(context, true); // FIXME: trigger dao here
             }
 
             HashSet<String> modifiedFiles = pulledFiles.newFiles;
             modifiedFiles.addAll(pulledFiles.changedFiles);
             for (String filename : modifiedFiles) {
-                if (filename.startsWith(".")) continue; // no hidden files
+                if (filename.startsWith(".")) continue; // no hidden files //// TODO: 28.03.17 use absolute pathes
                 File file = new File(filename);
                 try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
                     importer.parseFile(file.getAbsolutePath(), bufferedReader, context);
@@ -173,7 +169,6 @@ public abstract class Synchronizer {
      * Delete all files from the synchronized repository
      * except repository configuration files
      *
-     * @param context
      */
     public void clearRepository(Context context) {
         File dir = new File(getAbsoluteFilesDir());
@@ -206,7 +201,6 @@ public abstract class Synchronizer {
     /**
      * Synchronize a new file
      *
-     * @param filename
      */
     abstract public void addFile(String filename);
 
