@@ -11,7 +11,7 @@ import com.yahoo.squidb.annotations.tables.constraints.Unique;
 import org.joda.time.DateTime;
 
 @TableModelSpec(className = "FileEntity", tableName = "file")
-@ConstraintSql("UNIQUE (fileName) ON CONFLICT IGNORE")
+@ConstraintSql("UNIQUE (filePath) ON CONFLICT IGNORE")
 class FileSpec {
     @PrimaryKey
     @ColumnName("_id")

@@ -81,7 +81,7 @@ public class OrgUtils {
             text = "";
 
         OrgNode node = new OrgNode();
-        node.name = subject;
+        node.setDisplayName(subject);
         node.setPayload(text);
         return node;
     }

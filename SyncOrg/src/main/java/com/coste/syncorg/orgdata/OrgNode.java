@@ -1,10 +1,8 @@
 package com.coste.syncorg.orgdata;
 
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
-import android.net.Uri;
 import android.text.TextUtils;
 
 import com.coste.syncorg.orgdata.OrgContract.OrgData;
@@ -17,18 +15,18 @@ import java.util.HashMap;
 
 public class OrgNode {
 
-    public long id = -1;
-    public long parentId = -1;
-    public long fileId = -1;
+    long id = -1;
+    long parentId = -1;
+    long fileId = -1;
 
-    public long level = 0; // The headline level
-    public String priority = ""; // The priority tag
-    public String todo = "";    // The TODO state
-    public String tags = "";
+    long level = 0; // The headline level
+    String priority = ""; // The priority tag
+    String todo = "";    // The TODO state
+    String tags = "";
     String tags_inherited = "";
-    public String name = "";
+    String displayName = "";
     // The ordering of the same level siblings
-    public int position = 0;
+    int positionInParent = 0;
     private OrgNodeTimeDate deadline, scheduled;
     // The payload is a string containing the raw string corresponding to this mode
     private String payload = "";
@@ -43,14 +41,14 @@ public class OrgNode {
         this.todo = node.todo;
         this.tags = node.tags;
         this.tags_inherited = node.tags_inherited;
-        this.name = node.name;
-        this.position = node.position;
+        this.displayName = node.displayName;
+        this.positionInParent = node.positionInParent;
         this.scheduled = node.scheduled;
         this.deadline = node.deadline;
         setPayload(node.getPayload());
     }
 
-    public OrgNode(long id, long parentId, long fileId, long level, String priority, String todo, String tags, String tags_inherited, String name, int position, String payload) {
+    public OrgNode(long id, long parentId, long fileId, long level, String priority, String todo, String tags, String tags_inherited, String displayName, int positionInParent, String payload) {
         this.id = id;
         this.parentId = parentId;
         this.fileId = fileId;
@@ -59,8 +57,8 @@ public class OrgNode {
         this.todo = todo;
         this.tags = tags;
         this.tags_inherited = tags_inherited;
-        this.name = name;
-        this.position = position;
+        this.displayName = displayName;
+        this.positionInParent = positionInParent;
         this.payload = payload;
     }
 
@@ -74,14 +72,11 @@ public class OrgNode {
             cursor.close();
             throw new OrgNodeNotFoundException("Node with id \"" + id + "\" not found");
         }
-        set(cursor);
+      //  set(cursor);
 
         cursor.close();
     }
 
-    public OrgNode(Cursor cursor) throws OrgNodeNotFoundException {
-        set(cursor);
-    }
 
     public static boolean hasChildren(long node_id, ContentResolver resolver) {
         try {
@@ -98,34 +93,6 @@ public class OrgNode {
         scheduled = new OrgNodeTimeDate(OrgNodeTimeDate.TYPE.Scheduled, id);
     }
 
-    public void set(Cursor cursor) throws OrgNodeNotFoundException {
-        if (cursor != null && cursor.getCount() > 0) {
-            if (cursor.isBeforeFirst() || cursor.isAfterLast())
-                cursor.moveToFirst();
-            id = cursor.getLong(cursor.getColumnIndexOrThrow(OrgData.ID));
-            parentId = cursor.getLong(cursor
-                    .getColumnIndexOrThrow(OrgData.PARENT_ID));
-            fileId = cursor.getLong(cursor
-                    .getColumnIndexOrThrow(OrgData.FILE_ID));
-            level = cursor.getLong(cursor.getColumnIndexOrThrow(OrgData.LEVEL));
-            priority = cursor.getString(cursor
-                    .getColumnIndexOrThrow(OrgData.PRIORITY));
-            todo = cursor.getString(cursor.getColumnIndexOrThrow(OrgData.TODO));
-            tags = cursor.getString(cursor.getColumnIndexOrThrow(OrgData.TAGS));
-            tags_inherited = cursor.getString(cursor
-                    .getColumnIndexOrThrow(OrgData.TAGS_INHERITED));
-            name = cursor.getString(cursor.getColumnIndexOrThrow(OrgData.NAME));
-            payload = cursor.getString(cursor
-                    .getColumnIndexOrThrow(OrgData.PAYLOAD));
-            position = cursor.getInt(cursor
-                    .getColumnIndexOrThrow(OrgData.POSITION));
-
-        } else {
-            throw new OrgNodeNotFoundException(
-                    "Failed to create OrgNode from cursor");
-        }
-        setTimestamps();
-    }
 
     public String getFilename(ContentResolver resolver) {
         try {
@@ -170,13 +137,15 @@ public class OrgNode {
     }
 
     private int updateNode(Context context) {
+        // TODO: 30.03.17 refactor
         if (scheduled != null) {
             scheduled.update(context, id, fileId);
         }
         if (deadline != null) {
             deadline.update(context, id, fileId);
         }
-        return context.getContentResolver().update(OrgData.buildIdUri(id), getContentValues(), null, null);
+      //  return context.getContentResolver().update(OrgData.buildIdUri(id), getContentValues(), null, null);
+        return 0;
     }
 
     public boolean isHabit() {
@@ -184,20 +153,7 @@ public class OrgNode {
         return orgNodePayload.getProperty("STYLE").equals("habit");
     }
 
-    private ContentValues getContentValues() {
-        ContentValues values = new ContentValues();
-        values.put(OrgData.NAME, name);
-        values.put(OrgData.TODO, todo);
-        values.put(OrgData.FILE_ID, fileId);
-        values.put(OrgData.LEVEL, level);
-        values.put(OrgData.PARENT_ID, parentId);
-        values.put(OrgData.PAYLOAD, payload);
-        values.put(OrgData.PRIORITY, priority);
-        values.put(OrgData.TAGS, tags);
-        values.put(OrgData.TAGS_INHERITED, tags_inherited);
-        values.put(OrgData.POSITION, position);
-        return values;
-    }
+
 
     /**
      * This will split up the tag string that it got from the tag entry in the
@@ -230,7 +186,7 @@ public class OrgNode {
         ArrayList<OrgNode> children = getChildren(resolver);
 
         for (OrgNode node : children)
-            result.add(node.name);
+            result.add(node.displayName);
 
         return result;
     }
@@ -239,11 +195,11 @@ public class OrgNode {
         ArrayList<OrgNode> children = getChildren(resolver);
 
         for (OrgNode child : children) {
-            if (child.name.equals(name))
+            if (child.displayName.equals(name))
                 return child;
         }
         throw new OrgNodeNotFoundException("Couln't find child of node "
-                + this.name + " with name " + name);
+                + this.displayName + " with displayName " + name);
     }
 
     public boolean hasChildren(ContentResolver resolver) {
@@ -259,9 +215,11 @@ public class OrgNode {
     private OrgNode getParent(ContentResolver resolver) throws OrgNodeNotFoundException {
         Cursor cursor = resolver.query(OrgData.buildIdUri(this.parentId),
                 OrgData.DEFAULT_COLUMNS, null, null, null);
-        OrgNode parent = new OrgNode(cursor);
-        if (cursor != null) cursor.close();
-        return parent;
+//        OrgNode parent = new OrgNode(cursor);
+//        if (cursor != null) cursor.close();
+//        return parent;
+        return null;
+        // TODO: 30.03.17 refactor
     }
 
 
@@ -270,7 +228,7 @@ public class OrgNode {
             OrgNode parent = getParent(resolver);
             return parent.getChildrenStringArray(resolver);
         } catch (OrgNodeNotFoundException e) {
-            throw new IllegalArgumentException("Couldn't get parent for node " + name);
+            throw new IllegalArgumentException("Couldn't get parent for node " + displayName);
         }
     }
 
@@ -279,14 +237,14 @@ public class OrgNode {
             OrgNode parent = getParent(resolver);
             return parent.getChildren(resolver);
         } catch (OrgNodeNotFoundException e) {
-            throw new IllegalArgumentException("Couldn't get parent for node " + name);
+            throw new IllegalArgumentException("Couldn't get parent for node " + displayName);
         }
     }
 
     public void shiftNextSiblingNodes(Context context) {
         for (OrgNode sibling : getSiblings(context.getContentResolver())) {
-            if (sibling.position >= position && sibling.id != this.id) {
-                ++sibling.position;
+            if (sibling.positionInParent >= positionInParent && sibling.id != this.id) {
+                ++sibling.positionInParent;
                 sibling.updateNode(context);
             }
         }
@@ -378,9 +336,9 @@ public class OrgNode {
         if (!TextUtils.isEmpty(priority))
             result.append("[#" + priority + "] ");
 
-        result.append(name);
+        result.append(displayName);
 
-        if (scheduled != null|| deadline != null) {
+        if (scheduled != null || deadline != null) {
             result.append("\n" + getLevelPadding(' '));
             if (scheduled != null) {
                 result.append(scheduled.toFormatedString());
@@ -404,7 +362,7 @@ public class OrgNode {
 
 
     public boolean equals(OrgNode node) {
-        return name.equals(node.name) && tags.equals(node.tags)
+        return displayName.equals(node.displayName) && tags.equals(node.tags)
                 && priority.equals(node.priority) && todo.equals(node.todo)
                 && payload.equals(node.payload);
     }
@@ -419,19 +377,95 @@ public class OrgNode {
 
     /**
      * Add this node and rewrite the file on disk
-     *
      */
     private long addNode(Context context) {
+        //TODO refactor
 
-        Uri uri = context.getContentResolver().insert(OrgData.CONTENT_URI, getContentValues());
-        this.id = Long.parseLong(OrgData.getId(uri));
-        if (scheduled != null) {
-            scheduled.update(context, id, fileId);
-        }
-        if (deadline != null) {
-            deadline.update(context, id, fileId);
-        }
-        OrgFileOld.updateFile(this, context);
+//        Uri uri = context.getContentResolver().insert(OrgData.CONTENT_URI, getContentValues());
+//        this.id = Long.parseLong(OrgData.getId(uri));
+//        if (scheduled != null) {
+//            scheduled.update(context, id, fileId);
+//        }
+//        if (deadline != null) {
+//            deadline.update(context, id, fileId);
+//        }
+//        OrgFileOld.updateFile(this, context);
         return id;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(long parentId) {
+        this.parentId = parentId;
+    }
+
+    public long getFileId() {
+        return fileId;
+    }
+
+    public void setFileId(long fileId) {
+        this.fileId = fileId;
+    }
+
+    public long getLevel() {
+        return level;
+    }
+
+    public void setLevel(long level) {
+        this.level = level;
+    }
+
+    public String getPriority() {
+        return priority;
+    }
+
+    public void setPriority(String priority) {
+        this.priority = priority;
+    }
+
+    public String getTodo() {
+        return todo;
+    }
+
+    public void setTodo(String todo) {
+        this.todo = todo;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
+    }
+
+    public String getTags_inherited() {
+        return tags_inherited;
+    }
+
+    public void setTags_inherited(String tags_inherited) {
+        this.tags_inherited = tags_inherited;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public int getPositionInParent() {
+        return positionInParent;
+    }
+
+    public void setPositionInParent(int positionInParent) {
+        this.positionInParent = positionInParent;
     }
 }

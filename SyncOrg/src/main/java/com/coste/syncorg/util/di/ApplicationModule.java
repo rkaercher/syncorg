@@ -5,6 +5,11 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import com.coste.syncorg.dao.OrgFileDao;
+import com.coste.syncorg.dao.OrgNodeDao;
+import com.coste.syncorg.dao.TagDao;
+import com.coste.syncorg.dao.TimestampDao;
+import com.coste.syncorg.dao.TodoDao;
 import com.coste.syncorg.orgdata.OrgDatabase;
 import com.coste.syncorg.orgdata.OrgFileImporter;
 import com.coste.syncorg.synchronizers.ExternalSynchronizer;
@@ -35,8 +40,8 @@ public class ApplicationModule {
 
 
     @Provides
-    OrgFileImporter provideOrgFileImporter() {
-        return new OrgFileImporter(appContext);
+    OrgFileImporter provideOrgFileImporter(OrgFileDao orgFileDao, OrgNodeDao orgNodeDao, TimestampDao timestampDao, TagDao tagDao, TodoDao todoDao) {
+        return new OrgFileImporter(orgFileDao, orgNodeDao, timestampDao, tagDao, todoDao, appContext);
     }
 
     @Provides

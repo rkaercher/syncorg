@@ -13,11 +13,14 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
+import com.coste.syncorg.dao.OrgNodeDao;
 import com.coste.syncorg.gui.filter.FilterActivity;
 import com.coste.syncorg.orgdata.NodeFilter;
-import com.coste.syncorg.orgdata.OrgContract;
 import com.coste.syncorg.orgdata.OrgNode;
+import com.coste.syncorg.orgdata.SyncOrgApplication;
 import com.coste.syncorg.util.OrgNodeNotFoundException;
+
+import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -34,9 +37,13 @@ public class OrgNodeDetailActivity extends AppCompatActivity {
     @BindView(R.id.detail_toolbar)
     Toolbar toolbar;
 
+    @Inject
+    OrgNodeDao orgNodeDao;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        ((SyncOrgApplication) getApplication()).getDiComponent().inject(this);
         setContentView(R.layout.activity_orgnode_detail);
         ButterKnife.bind(this);
         setSupportActionBar(toolbar);
@@ -62,11 +69,14 @@ public class OrgNodeDetailActivity extends AppCompatActivity {
             Bundle arguments = new Bundle();
             Long nodeId = getNodeId();
 
-            arguments.putLong(OrgContract.NODE_ID, nodeId);
-            arguments.putLong(OrgContract.POSITION, getIntent().getLongExtra(OrgContract.POSITION, -1));
+            OrgNodeDetailFragment.NodeListType listType = getListType();
+
+            arguments.putLong(OrgNodeDetailFragment.ARGUMENT_NODE_OR_FILE_ID, nodeId);
+            arguments.putSerializable(OrgNodeDetailFragment.ARGUMENT_LIST_TYPE, listType);
             Fragment fragment;
 
-            if (isAgendaSpecialNode(nodeId)) fragment = new AgendaFragment();
+            if (listType == OrgNodeDetailFragment.NodeListType.AGENDA)
+                fragment = new AgendaFragment();
             else fragment = new OrgNodeDetailFragment();
 
             fragment.setArguments(arguments);
@@ -81,30 +91,26 @@ public class OrgNodeDetailActivity extends AppCompatActivity {
     }
 
     private void setActionBarTitle(ActionBar actionBar, Long nodeId) {
-        if (isTodoSpecialNode(nodeId))
-            actionBar.setTitle(getResources().getString(R.string.menu_todos));
-        else if (isAgendaSpecialNode(nodeId)) {
-            actionBar.setTitle(getResources().getString(R.string.menu_agenda));
-        } else {
-            try {
-                OrgNode node = new OrgNode(nodeId, getContentResolver());
-                actionBar.setTitle(node.name);
-            } catch (OrgNodeNotFoundException e) {
-                e.printStackTrace();
-            }
+        getListType();
+        switch (getListType()) {
+            case TODO:
+                actionBar.setTitle(getResources().getString(R.string.menu_todos));
+                break;
+            case AGENDA:
+                actionBar.setTitle(getResources().getString(R.string.menu_agenda));
+                break;
+            default:
+                OrgNode node = this.orgNodeDao.findById(nodeId);
+                actionBar.setTitle(node.getDisplayName());
         }
     }
 
-    private boolean isTodoSpecialNode(Long nodeId) {
-        return nodeId == OrgContract.TODO_ID;
-    }
-
-    private boolean isAgendaSpecialNode(Long nodeId) {
-        return nodeId == OrgContract.AGENDA_ID;
+    private OrgNodeDetailFragment.NodeListType getListType() {
+        return (OrgNodeDetailFragment.NodeListType) getIntent().getSerializableExtra(OrgNodeDetailFragment.ARGUMENT_LIST_TYPE);
     }
 
     private long getNodeId() {
-        return getIntent().getLongExtra(OrgContract.NODE_ID, -1);
+        return getIntent().getLongExtra(OrgNodeDetailFragment.ARGUMENT_NODE_OR_FILE_ID, -1);
     }
 
     @Override
@@ -122,7 +128,8 @@ public class OrgNodeDetailActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) { //TODO refactor
-        if (isAgendaSpecialNode(getNodeId()) || isTodoSpecialNode(getNodeId())) {
+        OrgNodeDetailFragment.NodeListType listType = getListType();
+        if (listType == OrgNodeDetailFragment.NodeListType.AGENDA || listType == OrgNodeDetailFragment.NodeListType.TODO) {
             MenuInflater inflater = getMenuInflater();
             inflater.inflate(R.menu.agenda_list, menu);
             return true;
@@ -159,7 +166,7 @@ public class OrgNodeDetailActivity extends AppCompatActivity {
                 return true;
             case R.id.menu_filter:
                 Intent intent = new Intent(this, FilterActivity.class);
-                intent.putExtra(FilterActivity.PARAM_FILTER_TYPE, isAgendaSpecialNode(getNodeId()) ? NodeFilter.FilterType.AGENDA : NodeFilter.FilterType.TODO);
+                intent.putExtra(FilterActivity.PARAM_FILTER_TYPE, getListType() == OrgNodeDetailFragment.NodeListType.AGENDA ? NodeFilter.FilterType.AGENDA : NodeFilter.FilterType.TODO);
                 startActivity(intent);
                 return true;
 

@@ -4,7 +4,6 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.TypedArray;
-import android.database.Cursor;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -27,10 +26,8 @@ import android.widget.TextView;
 
 import com.coste.syncorg.dao.OrgNodeDao;
 import com.coste.syncorg.orgdata.OrgContract;
-import com.coste.syncorg.orgdata.OrgDatabase;
 import com.coste.syncorg.orgdata.OrgNode;
 import com.coste.syncorg.orgdata.OrgNodeTree;
-import com.coste.syncorg.orgdata.OrgProviderUtils;
 import com.coste.syncorg.orgdata.SyncOrgApplication;
 import com.coste.syncorg.util.OrgNodeNotFoundException;
 import com.coste.syncorg.util.TodoDialog;
@@ -47,12 +44,22 @@ import javax.inject.Inject;
  */
 public class OrgNodeDetailFragment extends Fragment {
 
+    public enum NodeListType {
+        FILE,
+        TODO,
+        AGENDA
+    }
+
+    public static final String ARGUMENT_LIST_TYPE = "ARGUENT_LIST_TYPE";
+    public static final String ARGUMENT_NODE_OR_FILE_ID = "ARGUMENT_NODE_OR_FILE_ID";
+
     MainRecyclerViewAdapter adapter;
     Button insertNodeButton;
     RecyclerView recyclerView;
     TextView insertNodeText;
     private ContentResolver resolver;
     private long nodeId;
+    private NodeListType listType;
     private OrgNode selectedNode;
     private View highlightedView = null;
     private ActionMode mActionMode = null;
@@ -111,30 +118,22 @@ public class OrgNodeDetailFragment extends Fragment {
         this.resolver = getActivity().getContentResolver();
         ((SyncOrgApplication) getActivity().getApplication()).getDiComponent().inject(this);
 
-        if (getArguments().containsKey(OrgContract.NODE_ID)) {
             Bundle arguments = getArguments();
-            this.nodeId = arguments.getLong(OrgContract.NODE_ID);
-
-
+        this.listType = (NodeListType) arguments.getSerializable(ARGUMENT_LIST_TYPE);
+        if (listType == NodeListType.FILE) {
+            this.nodeId = arguments.getLong(ARGUMENT_NODE_OR_FILE_ID);
         }
 
         adapter = new MainRecyclerViewAdapter();
-
     }
 
     private OrgNodeTree getTree() {
         // Handling of the TODO file
-        if (nodeId == OrgContract.TODO_ID) {
+        if (listType == NodeListType.TODO) {
             return new OrgNodeTree(orgNodeDao.findTodoNodes());
         } else {
-            try {
-                return new OrgNodeTree(new OrgNode(nodeId, resolver), resolver);
-            } catch (OrgNodeNotFoundException e) {
-//                TODO: implement error
-                e.printStackTrace();
-            }
+                return new OrgNodeTree(orgNodeDao.findById(nodeId), resolver);
         }
-        return null;
     }
 
     @Override
@@ -203,7 +202,6 @@ public class OrgNodeDetailFragment extends Fragment {
     /**
      * Find the CardView containing the given node id
      *
-     * @param id
      * @return the position of the CardView
      */
     int findCardViewContaining(long id) {
@@ -212,12 +210,12 @@ public class OrgNodeDetailFragment extends Fragment {
         long cardViewMainNode = -1;
         try {
             do {
-                if (node != null) cardViewMainNode = node.id;
+                if (node != null) cardViewMainNode = node.getId();
                 node = new OrgNode(id, getContext().getContentResolver());
-                id = node.parentId;
+                id = node.getParentId();
             } while (id > -1);
             for (int i = 0; i < adapter.tree.children.size(); i++) {
-                if (adapter.tree.children.get(i).node.id == cardViewMainNode) {
+                if (adapter.tree.children.get(i).node.getId() == cardViewMainNode) {
                     return i;
                 }
             }
@@ -227,12 +225,12 @@ public class OrgNodeDetailFragment extends Fragment {
         return 0;
     }
 
-    public class MainRecyclerViewAdapter
+    private class MainRecyclerViewAdapter
             extends RecyclerView.Adapter<MultipleItemsViewHolder> {
 
         private OrgNodeTree tree;
 
-        public MainRecyclerViewAdapter() {
+        MainRecyclerViewAdapter() {
         }
 
         @Override
@@ -265,7 +263,7 @@ public class OrgNodeDetailFragment extends Fragment {
         class SimpleItemTouchHelperCallback extends ItemTouchHelper.Callback {
             private final RecyclerView.Adapter mAdapter;
 
-            public SimpleItemTouchHelperCallback(RecyclerView.Adapter adapter) {
+            SimpleItemTouchHelperCallback(RecyclerView.Adapter adapter) {
                 mAdapter = adapter;
             }
 
@@ -285,7 +283,7 @@ public class OrgNodeDetailFragment extends Fragment {
 //                int parentId = (int)node.parentId;
 
                 OrgNodeViewHolder item = (OrgNodeViewHolder) viewHolder;
-                EditNodeFragment.createEditNodeFragment((int) item.node.id, -1, -1, getContext());
+                EditNodeFragment.createEditNodeFragment((int) item.node.getId(), -1, -1, getContext());
             }
 
             @Override
@@ -296,14 +294,14 @@ public class OrgNodeDetailFragment extends Fragment {
         }
     }
 
-    public class SecondaryRecyclerViewAdapter
+    private class SecondaryRecyclerViewAdapter
             extends RecyclerView.Adapter<OrgNodeViewHolder> {
 
         NavigableMap<Long, OrgNodeTree> items;
         private OrgNodeTree tree;
         private int parentPosition;
 
-        public SecondaryRecyclerViewAdapter(OrgNodeTree root, int parentPosition) {
+        SecondaryRecyclerViewAdapter(OrgNodeTree root, int parentPosition) {
             tree = root;
             refreshVisibility();
             this.parentPosition = parentPosition;
@@ -380,10 +378,10 @@ public class OrgNodeDetailFragment extends Fragment {
                 @Override
                 public void onClick(View v) {
                     OrgNode currentNode = item.node;
-                    int parentId = (int) currentNode.parentId;
+                    int parentId = (int) currentNode.getParentId();
 
                     // Place the node right after this one in the adapter
-                    int siblingPosition = currentNode.position + 1;
+                    int siblingPosition = currentNode.getPositionInParent() + 1;
                     EditNodeFragment.createEditNodeFragment(-1, parentId, siblingPosition, getContext());
                 }
             });
@@ -391,7 +389,7 @@ public class OrgNodeDetailFragment extends Fragment {
             item.childLevel.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    int parentId = (int) item.node.id;
+                    int parentId = (int) item.node.getId();
                     EditNodeFragment.createEditNodeFragment(-1, parentId, 0, getContext());
                 }
             });

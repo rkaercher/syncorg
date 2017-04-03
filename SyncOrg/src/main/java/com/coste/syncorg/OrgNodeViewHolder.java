@@ -20,12 +20,12 @@ import com.coste.syncorg.util.TodoDialog;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class OrgNodeViewHolder extends ItemViewHolder {
-    public final View mView;
-    public final Pattern urlPattern = Pattern.compile("\\[\\[[^\\]]*\\]\\[([^\\]]*)\\]\\]");
-    public Button sameLevel, childLevel, deleteNodeButton;
-    public Button todoButton, priorityButton;
-    LinearLayout itemModifiers;
+class OrgNodeViewHolder extends ItemViewHolder {
+    final View mView;
+    private final Pattern urlPattern = Pattern.compile("\\[\\[[^\\]]*\\]\\[([^\\]]*)\\]\\]");
+    Button sameLevel, childLevel, deleteNodeButton;
+     Button todoButton, priorityButton;
+    private LinearLayout itemModifiers;
     OrgNode node;
     private TextView titleView, contentView;
     private TextView levelView;
@@ -43,7 +43,7 @@ public class OrgNodeViewHolder extends ItemViewHolder {
 //            }
 
 
-    public OrgNodeViewHolder(View view) {
+    OrgNodeViewHolder(View view) {
         super(view);
         mView = view;
 
@@ -78,8 +78,8 @@ public class OrgNodeViewHolder extends ItemViewHolder {
         this.levelView.setText(indentString);
     }
 
-    public void setupTitle(String name, SpannableStringBuilder titleSpan) {
-        titleView.setGravity(Gravity.LEFT);
+    private void setupTitle(String name, SpannableStringBuilder titleSpan) {
+        titleView.setGravity(Gravity.START);
         titleView.setTextSize(Style.titleFontSize[Math.min((int) getLevel() - 1, Style.nTitleColors - 1)]);
         if (getLevel() == 1) titleView.setTypeface(null, Typeface.BOLD);
         else titleView.setTypeface(null, Typeface.NORMAL);
@@ -107,12 +107,14 @@ public class OrgNodeViewHolder extends ItemViewHolder {
         }
     }
 
-    public void setup(OrgNodeTree root, boolean isSelected, Context context) {
+    void setup(OrgNodeTree root, boolean isSelected, Context context) {
         this.node = root.node;
-        SpannableStringBuilder titleSpan = new SpannableStringBuilder(node.name);
+        SpannableStringBuilder titleSpan = new SpannableStringBuilder(node.getDisplayName());
 
-        setupTitle(node.name, titleSpan);
-        setupPriority(node.priority);
+        setupTitle(node.getDisplayName(), titleSpan);
+
+        // TODO: 30.03.17 add to parser
+        //   setupPriority(node.priority);
         TodoDialog.setupTodoButton(context, node, todoButton, true);
 
         if (root.getVisibility() == OrgNodeTree.Visibility.folded)
@@ -156,7 +158,7 @@ public class OrgNodeViewHolder extends ItemViewHolder {
         }
     }
 
-    public void setupChildrenIndicator(OrgNode node, SpannableStringBuilder titleSpan, Context context) {
+    private void setupChildrenIndicator(OrgNode node, SpannableStringBuilder titleSpan, Context context) {
         if (node.hasChildren(context.getContentResolver())) {
             titleSpan.append("...");
             titleSpan.setSpan(new ForegroundColorSpan(Style.foreground),
@@ -165,7 +167,7 @@ public class OrgNodeViewHolder extends ItemViewHolder {
     }
 
     private long getLevel() {
-        if (node != null) return node.level;
+        if (node != null) return node.getLevel();
         return -1;
     }
 }

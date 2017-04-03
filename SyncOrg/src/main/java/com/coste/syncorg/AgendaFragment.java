@@ -115,8 +115,8 @@ public class AgendaFragment extends Fragment {
             try {
                 OrgNode node = new OrgNode(nodeId, resolver);
 
-                if (!calendarShowDone && !node.todo.equals("")) {
-                    if (!OrgProviderUtils.isTodoActive(node.todo, getActivity().getContentResolver()))
+                if (!calendarShowDone && !node.getTodo().equals("")) {
+                    if (!OrgProviderUtils.isTodoActive(node.getTodo(), getActivity().getContentResolver()))
                         continue;
                 }
 
@@ -151,8 +151,8 @@ public class AgendaFragment extends Fragment {
                 OrgNode node = new OrgNode(nodeId, resolver);
 
                 // Remove done items is setting: calendarShowDone=false
-                if (!calendarShowDone && !node.todo.equals("")) {
-                    if (!OrgProviderUtils.isTodoActive(node.todo, getActivity().getContentResolver()))
+                if (!calendarShowDone && !node.getTodo().equals("")) {
+                    if (!OrgProviderUtils.isTodoActive(node.getTodo(), getActivity().getContentResolver()))
                         continue;
                 }
 
@@ -324,7 +324,7 @@ public class AgendaFragment extends Fragment {
             TextView title = (TextView) holder.itemView.findViewById(R.id.title);
             TextView details = (TextView) holder.itemView.findViewById(R.id.details);
 
-            title.setText(node.name);
+            title.setText(node.getDisplayName());
 
             String textDetails = node.getPayload();
 
@@ -347,7 +347,7 @@ public class AgendaFragment extends Fragment {
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    EditNodeFragment.createEditNodeFragment((int) node.id, -1, -1, getContext());
+                    EditNodeFragment.createEditNodeFragment((int) node.getId(), -1, -1, getContext());
                 }
             });
 

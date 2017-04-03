@@ -76,8 +76,9 @@ public class SearchActivity extends AppCompatActivity {
 
         Cursor result = OrgProviderUtils.search("%" + query.trim() + "%",
                 getContentResolver());
-        adapter.items = OrgProviderUtils
-                .orgDataCursorToArrayList(result);
+//        adapter.items = OrgProviderUtils
+//                .orgDataCursorToArrayList(result);
+        // TODO: 30.03.17 refactor
         adapter.notifyDataSetChanged();
     }
 
@@ -120,7 +121,7 @@ public class SearchActivity extends AppCompatActivity {
             final OrgNode node = items.get(position);
             TextView title = (TextView) holder.itemView.findViewById(R.id.title);
             TextView payload = (TextView) holder.itemView.findViewById(R.id.payload);
-            title.setText(node.name);
+            title.setText(node.getDisplayName());
             if (node.getCleanedPayload().equals("")) payload.setVisibility(View.GONE);
             else {
                 payload.setVisibility(View.VISIBLE);
@@ -131,10 +132,10 @@ public class SearchActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View view) {
                     try {
-                        OrgFileOld file = new OrgFileOld(node.fileId, getContentResolver());
+                        OrgFileOld file = new OrgFileOld(node.getFileId(), getContentResolver());
                         Intent intent = new Intent(SearchActivity.this, OrgNodeDetailActivity.class);
                         intent.putExtra(OrgContract.NODE_ID, file.nodeId);
-                        intent.putExtra(OrgContract.POSITION, node.id);
+                        intent.putExtra(OrgContract.POSITION, node.getId());
                         startActivity(intent);
                     } catch (OrgFileNotFoundException e) {
                         e.printStackTrace();

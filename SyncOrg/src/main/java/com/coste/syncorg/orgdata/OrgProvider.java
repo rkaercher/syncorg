@@ -155,7 +155,7 @@ public class OrgProvider extends ContentProvider {
                 return builder.table(Tables.TIMESTAMPS).where(Timestamps.NODE_ID + "=?", Timestamps.getId(uri));
             case SEARCH:
                 final String search = Search.getSearchTerm(uri);
-                return builder.table(Tables.ORGDATA).where("name LIKE %?%", search);
+                return builder.table(Tables.ORGDATA).where("displayName LIKE %?%", search);
             default:
                 throw new IllegalArgumentException("Unknown URI " + uri);
         }

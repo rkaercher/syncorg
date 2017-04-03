@@ -12,6 +12,7 @@ import com.coste.syncorg.gui.FileDecryptionActivity;
 import com.coste.syncorg.orgdata.table.FileEntity;
 import com.coste.syncorg.orgdata.table.OrgNodeEntity;
 import com.coste.syncorg.orgdata.table.TimestampEntity;
+import com.coste.syncorg.orgdata.table.TodoTypeEntity;
 import com.coste.syncorg.util.FileUtils;
 import com.coste.syncorg.util.PreferenceUtils;
 
@@ -36,26 +37,29 @@ import static junit.framework.Assert.assertTrue;
 public class OrgFileImporter {
     private HashSet<String> excludedTags;
 
-
-    @Inject
     OrgFileDao orgFileDao;
 
-    @Inject
     OrgNodeDao orgNodeDao;
 
-    @Inject
     TimestampDao timestampDao;
 
-    @Inject
     TagDao tagDao;
 
-    @Inject
     TodoDao todoDao;
 
     private  Context context;
 
-    public OrgFileImporter(Context context) {
+    public OrgFileImporter(OrgFileDao orgFileDao, OrgNodeDao orgNodeDao, TimestampDao timestampDao, TagDao tagDao, TodoDao todoDao, Context context) {
+        this.orgFileDao = orgFileDao;
+        this.orgNodeDao = orgNodeDao;
+        this.timestampDao = timestampDao;
+        this.tagDao = tagDao;
+        this.todoDao = todoDao;
         this.context = context;
+
+        // TODO: 30.03.17 put in initizlization service
+        todoDao.save(new TodoTypeEntity().setKeyword("TODO"));
+        todoDao.save(new TodoTypeEntity().setKeyword("DONE").setIsInactive(true));
     }
 
     private void decryptAndParseFile(String orgFilePath, BufferedReader reader, Context context) {

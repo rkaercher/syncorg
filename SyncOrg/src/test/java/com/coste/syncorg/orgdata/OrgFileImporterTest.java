@@ -9,6 +9,7 @@ import com.coste.syncorg.dao.TodoDao;
 import com.coste.syncorg.orgdata.table.FileEntity;
 import com.coste.syncorg.orgdata.table.OrgNodeEntity;
 import com.coste.syncorg.orgdata.table.TimestampEntity;
+import com.coste.syncorg.orgdata.table.TodoTypeEntity;
 
 import org.joda.time.LocalDate;
 import org.junit.Before;
@@ -26,6 +27,7 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -68,12 +70,7 @@ public class OrgFileImporterTest {
     @Test
     public void parseFile() throws Exception {
         InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream("org-testfile.org");
-        OrgFileImporter sut = new OrgFileImporter(RuntimeEnvironment.application);
-        sut.orgFileDao = this.orgFileDao;
-        sut.orgNodeDao = this.orgNodeDao;
-        sut.timestampDao = this.timestampDao;
-        sut.tagDao = this.tagDao;
-        sut.todoDao = this.todoDao;
+        OrgFileImporter sut = new OrgFileImporter(this.orgFileDao, this.orgNodeDao, this.timestampDao, this.tagDao, this.todoDao, RuntimeEnvironment.application);
 
         when(orgFileDao.save(argThat(argument ->
                 fileEntity().equals(argument))))
@@ -114,6 +111,8 @@ public class OrgFileImporterTest {
         verifyNoMoreInteractions(tagDao);
 
         verify(todoDao).getTodoIdMappings();
+
+        verify(todoDao, times(2)).save(any(TodoTypeEntity.class));
 
         verifyNoMoreInteractions(todoDao);
 

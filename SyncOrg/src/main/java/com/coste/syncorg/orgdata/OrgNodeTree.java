@@ -20,28 +20,23 @@ public class OrgNodeTree {
         node = root;
         children = new ArrayList<>();
         visibility = Visibility.subtree;
-
+// TODO: 30.03.17 reactivate
         if (isRecursive && root != null) {
-            for (OrgNode child : root.getChildren(resolver)) {
-                children.add(new OrgNodeTree(child, resolver));
-            }
+//            for (OrgNode child : root.getChildren(resolver)) {
+//                children.add(new OrgNodeTree(child, resolver));
+//            }
         }
     }
 
     /**
      * Create a tree with only the root
-     *
-     * @param root
      */
-    public OrgNodeTree(OrgNode root) {
+    private OrgNodeTree(OrgNode root) {
         this(root, null, false);
     }
 
     /**
      * Create a tree and all sub-trees
-     *
-     * @param root
-     * @param resolver
      */
     public OrgNodeTree(OrgNode root, ContentResolver resolver) {
         this(root, resolver, true);
@@ -49,7 +44,6 @@ public class OrgNodeTree {
 
     /**
      * Create a flat tree from a List
-     *
      */
     public OrgNodeTree(List<OrgNode> arrayList) {
         this((OrgNode) null);
@@ -60,7 +54,7 @@ public class OrgNodeTree {
         return getFullNodeArray(root, false);
     }
 
-    static public ArrayList<OrgNode> getFullNodeArray(OrgNodeTree root, boolean excludeRoot) {
+    static ArrayList<OrgNode> getFullNodeArray(OrgNodeTree root, boolean excludeRoot) {
         Stack<OrgNodeTree> stack = new Stack<>();
         ArrayList<OrgNode> result = new ArrayList<>();
         stack.push(root);
@@ -71,8 +65,8 @@ public class OrgNodeTree {
             Collections.sort(tree.children, new Comparator<OrgNodeTree>() {
                 @Override
                 public int compare(OrgNodeTree a, OrgNodeTree b) {
-                    if (a.node.position < b.node.position) return 1;
-                    if (a.node.position > b.node.position) return -1;
+                    if (a.node.getPositionInParent() < b.node.getPositionInParent()) return 1;
+                    if (a.node.getPositionInParent() > b.node.getPositionInParent()) return -1;
                     return 0;
                 }
             });

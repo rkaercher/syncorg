@@ -15,6 +15,7 @@ import com.coste.syncorg.R;
 import com.coste.syncorg.orgdata.OrgFileOld;
 import com.coste.syncorg.orgdata.OrgNode;
 import com.coste.syncorg.orgdata.OrgProviderUtils;
+import com.coste.syncorg.orgdata.table.OrgNodeEntity;
 
 import java.util.ArrayList;
 
@@ -47,12 +48,13 @@ public class TodoDialog {
                                                 int which) {
                                 String selectedTodo = todoList.get(which);
                                 if (which == 0) selectedTodo = "";
-                                node.todo = selectedTodo;
+                                node.setTodo(selectedTodo);
                                 setupTodoButton(context, node, button, false);
-                                if (writeChangeOnTodoChanged) {
-                                    node.write(context);
-                                    OrgFileOld.updateFile(node, context);
-                                }
+//                                if (writeChangeOnTodoChanged) {
+//                                    node.write(context);
+//                                    OrgFileOld.updateFile(node, context);
+//                                }
+                                // TODO: 30.03.17 refactor
                             }
                         });
         builder.create().show();
@@ -60,7 +62,7 @@ public class TodoDialog {
 
     static public void setupTodoButton(Context context, OrgNode node,
                                        Button button, boolean toggleVisibility) {
-        String todoString = node.todo;
+        String todoString = node.getTodo();
         if (!TextUtils.isEmpty(todoString)) {
             Spannable todoSpan = new SpannableString(todoString + " ");
 

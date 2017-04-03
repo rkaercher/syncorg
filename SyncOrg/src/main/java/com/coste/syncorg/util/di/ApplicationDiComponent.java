@@ -3,6 +3,7 @@ package com.coste.syncorg.util.di;
 
 import com.coste.syncorg.AgendaFragment;
 import com.coste.syncorg.MainActivity;
+import com.coste.syncorg.OrgNodeDetailActivity;
 import com.coste.syncorg.OrgNodeDetailFragment;
 import com.coste.syncorg.gui.FileDecryptionActivity;
 import com.coste.syncorg.gui.filter.FilterActivity;
@@ -35,4 +36,6 @@ public interface ApplicationDiComponent {
     void inject(ConflictResolverActivity conflictResolverActivity);
 
     void inject(MainAdapter mainAdapter);
+
+    void inject(OrgNodeDetailActivity orgNodeDetailActivity);
 }

@@ -1,6 +1,5 @@
 package com.coste.syncorg.gui.outline;
 
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -29,12 +28,12 @@ import com.coste.syncorg.AgendaFragment;
 import com.coste.syncorg.OrgNodeDetailActivity;
 import com.coste.syncorg.OrgNodeDetailFragment;
 import com.coste.syncorg.R;
+import com.coste.syncorg.dao.OrgFileDao;
 import com.coste.syncorg.gui.theme.DefaultTheme;
 import com.coste.syncorg.orgdata.OrgContract;
-import com.coste.syncorg.orgdata.OrgFileOld;
 import com.coste.syncorg.orgdata.OrgNode;
-import com.coste.syncorg.orgdata.OrgProviderUtils;
 import com.coste.syncorg.orgdata.SyncOrgApplication;
+import com.coste.syncorg.orgdata.table.FileEntity;
 import com.coste.syncorg.synchronizers.Synchronizer;
 import com.coste.syncorg.util.OrgNodeNotFoundException;
 
@@ -44,18 +43,19 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+
 public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
     private final AppCompatActivity activity;
-    public List<OrgFileOld> items = new ArrayList<>();
+    public List<FileEntity> items = new ArrayList<>();
     // Number of added items. Here it is two: Agenda and Todos.
     private int numExtraItems;
     private ActionMode actionMode;
-    private ContentResolver resolver;
     private boolean mTwoPanes = false;
     private SparseBooleanArray selectedItems;
     private boolean calendarEnabled;
     private int positionTodo;
     private int positionCalendar;
+
 
     private DefaultTheme theme;
     private ActionMode.Callback mDeleteMode = new ActionMode.Callback() {
@@ -116,7 +116,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
                     ArrayList<Uri> uris = new ArrayList<>();
                     for (Integer num : selectedItems) {
                         num -= numExtraItems;
-                        OrgFileOld file = items.get(num);
+                        FileEntity file = items.get(num);
                         File f = new File(file.getFilePath());
                         Uri fileUri = FileProvider.getUriForFile(activity, "com.coste.fileprovider", new File(f.getPath()));
                         uris.add(fileUri);
@@ -136,10 +136,13 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
     @Inject
     Synchronizer synchronizer;
 
-    public MainAdapter(AppCompatActivity activity) { //TODO inject
+
+    @Inject
+    OrgFileDao fileDao;
+
+    public MainAdapter(AppCompatActivity activity) {
         super();
         this.activity = activity;
-        this.resolver = activity.getContentResolver();
 
         ((SyncOrgApplication) this.activity.getApplication()).getDiComponent().inject(this);
 
@@ -151,9 +154,10 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
     public void refresh() {
         clear();
 
-        for (OrgFileOld file : OrgProviderUtils.getFiles(resolver)) {
+        for (FileEntity file : fileDao.getFiles()) {
             add(file);
         }
+
 
         // Display calendar if enabled in Settings
         SharedPreferences appPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
@@ -178,19 +182,19 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
     @Override
     public void onBindViewHolder(final OutlineItem holder, final int position) {
         final int positionInItems = position - numExtraItems;
-        OrgFileOld file = null;
+        FileEntity file = null;
         try {
             file = items.get(positionInItems);
         } catch (ArrayIndexOutOfBoundsException ignored) {
         }
-        final boolean conflict = (file != null && file.getState() == OrgFileOld.State.kConflict);
+        final boolean conflict = false; //// TODO: 29.03.17 re add  //(file != null && file.getState() == OrgFileOld.State.kConflict);
         String title;
         if (position == 0) {
             title = activity.getResources().getString(R.string.menu_todos);
         } else if (position == positionCalendar) {
             title = activity.getResources().getString(R.string.menu_agenda);
         } else {
-            title = items.get(positionInItems).name;
+            title = items.get(positionInItems).getDisplayName();
         }
 
         holder.titleView.setText(title);
@@ -226,21 +230,18 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
                             return;
                         }
 
-                        if (position == 0) {
-                            arguments.putLong(OrgContract.NODE_ID, OrgContract.TODO_ID);
-                        } else if (position == positionCalendar) {
-                            arguments.putLong(OrgContract.NODE_ID, OrgContract.AGENDA_ID);
-                        } else {
-                            arguments.putLong(OrgContract.NODE_ID, itemId);
-                        }
-
                         Fragment fragment;
-
-                        if (arguments.getLong(OrgContract.NODE_ID) == OrgContract.AGENDA_ID)
+                        if (position == 0) {
+                            arguments.putSerializable(OrgNodeDetailFragment.ARGUMENT_LIST_TYPE, OrgNodeDetailFragment.NodeListType.TODO);
+                            fragment = new OrgNodeDetailFragment();
+                        } else if (position == positionCalendar) {
+                            arguments.putSerializable(OrgNodeDetailFragment.ARGUMENT_LIST_TYPE, OrgNodeDetailFragment.NodeListType.AGENDA);
                             fragment = new AgendaFragment();
-                        else fragment = new OrgNodeDetailFragment();
-
-                        fragment.setArguments(arguments);
+                        } else {
+                            arguments.putSerializable(OrgNodeDetailFragment.ARGUMENT_LIST_TYPE, OrgNodeDetailFragment.NodeListType.FILE);
+                            arguments.putLong(OrgNodeDetailFragment.ARGUMENT_NODE_OR_FILE_ID, itemId);
+                            fragment = new OrgNodeDetailFragment();
+                        }
 
                         AppCompatActivity activity = (AppCompatActivity) v.getContext();
                         activity.getSupportFragmentManager().beginTransaction()
@@ -256,7 +257,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
                             } else {
                                 try {
                                     OrgNode node = new OrgNode(arguments.getLong(OrgContract.NODE_ID), context.getContentResolver());
-                                    actionBar.setTitle(node.name);
+                                    actionBar.setTitle(node.getDisplayName());
                                 } catch (OrgNodeNotFoundException e) {
                                     e.printStackTrace();
                                 }
@@ -274,11 +275,12 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
 
 
                         if (position == 0) {
-                            intent.putExtra(OrgContract.NODE_ID, OrgContract.TODO_ID);
+                            intent.putExtra(OrgNodeDetailFragment.ARGUMENT_LIST_TYPE, OrgNodeDetailFragment.NodeListType.TODO);
                         } else if (position == positionCalendar) {
-                            intent.putExtra(OrgContract.NODE_ID, OrgContract.AGENDA_ID);
+                            intent.putExtra(OrgNodeDetailFragment.ARGUMENT_LIST_TYPE, OrgNodeDetailFragment.NodeListType.AGENDA);
                         } else {
-                            intent.putExtra(OrgContract.NODE_ID, itemId);
+                            intent.putExtra(OrgNodeDetailFragment.ARGUMENT_LIST_TYPE, OrgNodeDetailFragment.NodeListType.FILE);
+                            intent.putExtra(OrgNodeDetailFragment.ARGUMENT_NODE_OR_FILE_ID, itemId);
                         }
 
                         context.startActivity(intent);
@@ -314,18 +316,18 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
         this.items.clear();
     }
 
-    public void add(OrgFileOld file) {
+    public void add(FileEntity file) {
         this.items.add(file);
     }
 
     @Override
     public long getItemId(int position) {
         if (position < numExtraItems) return -1;
-        OrgFileOld file = items.get(position - numExtraItems);
-        return file.nodeId;
+        FileEntity file = items.get(position - numExtraItems);
+        return file.getId(); // // TODO: 29.03.17 was nodeId
     }
 
-    public void toggleSelection(int pos) {
+    private void toggleSelection(int pos) {
         int countBefore = getSelectedItemCount();
         if (selectedItems.get(pos, false)) {
             selectedItems.delete(pos);
@@ -344,16 +346,16 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
         }
     }
 
-    public void clearSelections() {
+    private void clearSelections() {
         selectedItems.clear();
         notifyDataSetChanged();
     }
 
-    public int getSelectedItemCount() {
+    private int getSelectedItemCount() {
         return selectedItems.size();
     }
 
-    public List<Integer> getSelectedItems() {
+    private List<Integer> getSelectedItems() {
         List<Integer> items =
                 new ArrayList<>(selectedItems.size());
         for (int i = 0; i < selectedItems.size(); i++) {
@@ -366,8 +368,8 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
         List<Integer> selectedItems = getSelectedItems();
         for (Integer num : selectedItems) {
             num -= numExtraItems;
-            OrgFileOld file = items.get(num);
-            file.removeFile(activity, true);
+            FileEntity file = items.get(num);
+            //    file.removeFile(activity, true); //// TODO: 29.03.17 reove with  dao
         }
         synchronizer.runSynchronize();
         refresh();
@@ -378,11 +380,11 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.OutlineItem> {
         mTwoPanes = _hasTwoPanes;
     }
 
-    public class OutlineItem extends RecyclerView.ViewHolder {
-        public final View mView;
-        public TextView titleView;
+    class OutlineItem extends RecyclerView.ViewHolder {
+        final View mView;
+        TextView titleView;
 
-        public OutlineItem(View view) {
+        OutlineItem(View view) {
             super(view);
             mView = view;
             titleView = (TextView) view.findViewById(R.id.title);

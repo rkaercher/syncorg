@@ -3,15 +3,14 @@ package com.coste.syncorg.dao;
 
 import android.database.Cursor;
 
-import com.coste.syncorg.orgdata.NodeFilter;
-import com.coste.syncorg.orgdata.OrgContract;
 import com.coste.syncorg.orgdata.OrgDatabase;
 import com.coste.syncorg.orgdata.OrgNode;
-import com.coste.syncorg.orgdata.table.FilterEntryTable;
-import com.coste.syncorg.orgdata.table.FilterTable;
 import com.coste.syncorg.orgdata.table.OrgNodeEntity;
+import com.coste.syncorg.orgdata.table.TodoTypeEntity;
+import com.yahoo.squidb.data.SquidCursor;
+import com.yahoo.squidb.sql.Property;
+import com.yahoo.squidb.sql.Query;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -33,11 +32,33 @@ public class OrgNodeDao {
         return null;
     }
 
+    public OrgNode findById(long nodeId) {
+
+        List<Property<?>> properties = OrgNodeEntity.PROPERTIES;
+        properties.add(TodoTypeEntity.KEYWORD);
+        SquidCursor<OrgNodeEntity> cursor = db.query(OrgNodeEntity.class, Query.select(properties).leftJoin(TodoTypeEntity.TABLE, OrgNodeEntity.TODO_ID.eq(TodoTypeEntity.ID)));
+
+
+        if (cursor.moveToFirst()) {
+            OrgNodeEntity entity = new OrgNodeEntity();
+            entity.readPropertiesFromCursor(cursor);
+            String tags = "";
+            String tagsInherited = "";
+            String todoKeyword = entity.get(TodoTypeEntity.KEYWORD);
+            if (todoKeyword == null) {
+                todoKeyword = "";
+            }
+            OrgNode result = new OrgNode(entity.getId(), entity.getParentId(), entity.getFileId(), entity.getLevel(), "#A", todoKeyword, tags, tagsInherited, entity.getDisplayName(), entity.getPositionInParent(), entity.getPayload());
+            return result;
+        }
+        return null;
+    }
+
     public List<OrgNode> findTodoNodes() {
 //        String t1 = OrgDatabase.Tables.ORGDATA;
 //        String t2 = OrgDatabase.Tables.TODOS;
 //        String t3 = FilterTable.name;
-//        String t4 = FilterEntryTable.name;
+//        String t4 = FilterEntrySpec.name;
 //        String sql = "Select " + OrgContract.formatColumns(t1, OrgContract.OrgData.DEFAULT_COLUMNS)
 //                + " FROM " + t1 + "," + t2 + "," + t3 + "," + t4 + " WHERE " + t1 + ".TODO=" + t2 + "."
 //                + OrgContract.Todos.NAME + " AND " + t2 + "." + OrgContract.Todos.ISDONE + "=0 AND "

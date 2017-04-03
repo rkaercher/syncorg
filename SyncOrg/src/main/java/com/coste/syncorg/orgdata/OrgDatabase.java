@@ -3,7 +3,6 @@ package com.coste.syncorg.orgdata;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 
 import com.coste.syncorg.orgdata.table.*;
@@ -70,23 +69,23 @@ public class OrgDatabase extends SquidDatabase {
                 + "_id integer primary key autoincrement,"
                 + "node_id integer,"
                 + "filename text,"
-                + "name text,"
+                + "displayName text,"
                 + "comment text,"
                 + "time_modified integer default 0,"
                 + "UNIQUE(filename) ON CONFLICT IGNORE)");
         db.execSQL("CREATE TABLE IF NOT EXISTS todos("
                 + "_id integer primary key autoincrement,"
                 + "todogroup integer,"
-                + "name text,"
+                + "displayName text,"
                 + "isdone integer default 0,"
-                + "UNIQUE(todogroup, name) ON CONFLICT IGNORE)");
+                + "UNIQUE(todogroup, displayName) ON CONFLICT IGNORE)");
         db.execSQL("CREATE TABLE IF NOT EXISTS priorities("
                 + "_id integer primary key autoincrement,"
-                + "name text)");
+                + "displayName text)");
         db.execSQL("CREATE TABLE IF NOT EXISTS tags("
                 + "_id integer primary key autoincrement,"
                 + "taggroup integer,"
-                + "name text)");
+                + "displayName text)");
         db.execSQL("CREATE TABLE IF NOT EXISTS orgdata ("
                 + "_id integer primary key autoincrement,"
                 + "parent_id integer default -1,"
@@ -97,8 +96,8 @@ public class OrgDatabase extends SquidDatabase {
                 + "tags text,"
                 + "tags_inherited text,"
                 + "payload text,"
-                + "name text,"
-                + "position integer,"
+                + "displayName text,"
+                + "positionInParent integer,"
                 + "scheduled integer default -1,"
                 + "scheduled_date_only integer default 0,"
                 + "deadline integer default -1,"
@@ -114,13 +113,13 @@ public class OrgDatabase extends SquidDatabase {
         ContentValues values = new ContentValues();
         values.put("_id", "0");
         values.put("todogroup", "0");
-        values.put("name", "TODO");
+        values.put("displayName", "TODO");
         values.put("isdone", "0");
     //    db.insert("todos", null, values);
 
         values.put("_id", "1");
         values.put("todogroup", "0");
-        values.put("name", "DONE");
+        values.put("displayName", "DONE");
         values.put("isdone", "1");
       //  db.insert("todos", null, values);
 
@@ -145,7 +144,7 @@ public class OrgDatabase extends SquidDatabase {
     }
 
     long fastInsertNode(OrgNode node) {
-        orgdataInsertStatement.bindString(1, node.name);
+        orgdataInsertStatement.bindString(1, node.displayName);
         orgdataInsertStatement.bindString(2, node.todo);
         orgdataInsertStatement.bindString(3, node.priority);
         orgdataInsertStatement.bindLong(4, node.parentId);
@@ -153,7 +152,7 @@ public class OrgDatabase extends SquidDatabase {
         orgdataInsertStatement.bindString(6, node.tags);
         orgdataInsertStatement.bindString(7, node.tags_inherited);
         orgdataInsertStatement.bindLong(8, node.level);
-        orgdataInsertStatement.bindLong(9, node.position);
+        orgdataInsertStatement.bindLong(9, node.positionInParent);
 
         return orgdataInsertStatement.executeInsert();
     }
@@ -191,7 +190,7 @@ public class OrgDatabase extends SquidDatabase {
 
     @Override
     protected Table[] getTables() {
-        return new Table[] {FilterEntity.TABLE, FileEntity.TABLE, OrgNodeEntity.TABLE, TagEntity.TABLE};
+        return new Table[] {FilterEntity.TABLE, FilterEntryEntity.TABLE, FileEntity.TABLE, OrgNodeEntity.TABLE, TagEntity.TABLE, TaggedByEntity.TABLE, TimestampEntity.TABLE, TodoTypeEntity.TABLE};
     }
 
     @Override

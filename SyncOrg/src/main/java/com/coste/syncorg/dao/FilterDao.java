@@ -1,19 +1,12 @@
 package com.coste.syncorg.dao;
 
 
-import android.content.ContentValues;
-import android.database.Cursor;
 import android.text.TextUtils;
 
 import com.coste.syncorg.orgdata.NodeFilter;
 import com.coste.syncorg.orgdata.OrgDatabase;
 import com.coste.syncorg.orgdata.table.FilterEntity;
 import com.coste.syncorg.orgdata.table.FilterEntryEntity;
-import com.coste.syncorg.orgdata.table.FilterEntryTable;
-import com.coste.syncorg.orgdata.table.FilterTable;
-
-import java.util.HashSet;
-import java.util.Set;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -73,7 +66,7 @@ public class FilterDao {
 //        Integer filterId = cursor.getInt(0);
 //        cursor.close();
 //
-//        cursor = db.getReadableDatabase().query(FilterEntryTable.name, new String[]{FilterEntryTable.FIELD_FILE_ID}, fieldSelection(FilterEntryTable.FIELD_FILTER_ID), new String[]{filterId.toString()}, null, null, null);
+//        cursor = db.getReadableDatabase().query(FilterEntrySpec.name, new String[]{FilterEntrySpec.FIELD_FILE_ID}, fieldSelection(FilterEntrySpec.FIELD_FILTER_ID), new String[]{filterId.toString()}, null, null, null);
 //
 //        if (cursor.getCount() > 0) {
 //            while (!cursor.isLast()) {

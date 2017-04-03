@@ -50,7 +50,7 @@ public class OrgNodeParser {
             if (matcher.group(TODO_GROUP) != null)
                 node.todo = matcher.group(TODO_GROUP);
 
-            node.name = matcher.group(NAME_GROUP);
+            node.displayName = matcher.group(NAME_GROUP);
 
             if (matcher.group(PRIORITY_GROUP) != null)
                 node.priority = matcher.group(PRIORITY_GROUP);
@@ -59,12 +59,12 @@ public class OrgNodeParser {
                 node.tags = matcher.group(TAGS_GROUP);
 
             if (matcher.group(AFTER_GROUP) != null)
-                node.name = matcher.group(AFTER_GROUP).trim()
-                        + ">" + node.name.trim();
+                node.displayName = matcher.group(AFTER_GROUP).trim()
+                        + ">" + node.displayName.trim();
 
         } else {
 //			Log.w("SyncOrg", "Title not matched: " + line);
-            node.name = line;
+            node.displayName = line;
         }
 
         return node;

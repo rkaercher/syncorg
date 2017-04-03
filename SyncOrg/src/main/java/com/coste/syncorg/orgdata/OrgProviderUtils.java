@@ -220,33 +220,19 @@ public class OrgProviderUtils {
     }
 
     public static ArrayList<OrgNode> getOrgNodeChildren(long nodeId, ContentResolver resolver) {
-
+// TODO: 30.03.17 refactor
         String sort = nodeId == -1 ? OrgData.NAME_SORT : OrgData.POSITION_SORT;
         Cursor childCursor = resolver.query(OrgData.buildChildrenUri(nodeId),
                 OrgData.DEFAULT_COLUMNS, null, null, sort);
 
-        if (childCursor != null) {
-            ArrayList<OrgNode> result = orgDataCursorToArrayList(childCursor);
-            childCursor.close();
-            return result;
-        } else {
+//        if (childCursor != null) {
+//            ArrayList<OrgNode> result = orgDataCursorToArrayList(childCursor);
+//            childCursor.close();
+//            return result;
+//        } else {
             return new ArrayList<OrgNode>();
-        }
+      //  }
     }
 
-    public static ArrayList<OrgNode> orgDataCursorToArrayList(Cursor cursor) {
-        ArrayList<OrgNode> result = new ArrayList<OrgNode>();
 
-        cursor.moveToFirst();
-
-        while (cursor.isAfterLast() == false) {
-            try {
-                result.add(new OrgNode(cursor));
-            } catch (OrgNodeNotFoundException e) {
-            }
-            cursor.moveToNext();
-        }
-
-        return result;
-    }
 }

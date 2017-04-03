@@ -7,6 +7,10 @@ import com.yahoo.squidb.data.SquidCursor;
 import com.yahoo.squidb.data.TableModel;
 import com.yahoo.squidb.sql.Query;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -31,5 +35,13 @@ public class OrgFileDao {
         return orgFile;
     }
 
+    public List<FileEntity> getFiles() {
+        List<FileEntity> result = new ArrayList<>();
+        SquidCursor<FileEntity> cursor = db.query(FileEntity.class, Query.select(FileEntity.PROPERTIES));
+        for (cursor.moveToFirst();!cursor.isAfterLast();cursor.moveToNext()) {
+            result.add(new FileEntity(cursor));
+        }
+        return result;
+    }
 
 }

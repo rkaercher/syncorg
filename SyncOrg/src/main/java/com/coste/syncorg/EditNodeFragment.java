@@ -147,8 +147,8 @@ public class EditNodeFragment extends Fragment {
             node.getDeadline().setDate((LocalDate) savedInstanceState.getSerializable(SSTATE_DEADLINE_DATE));
             node.getDeadline().setTime((LocalTime) savedInstanceState.getSerializable(SSTATE_DEADLINE_TIME));
 
-            node.todo = savedInstanceState.getString("btnTodo");
-            node.priority = savedInstanceState.getString("btnPriority");
+            node.setTodo(savedInstanceState.getString("btnTodo"));
+            node.setPriority(savedInstanceState.getString("btnPriority"));
         }
 
         TodoDialog.setupTodoButton(getContext(), node, btnTodo, false);
@@ -161,7 +161,7 @@ public class EditNodeFragment extends Fragment {
             }
         });
 
-        btnPriority.setText(node.priority);
+        btnPriority.setText(node.getPriority());
         btnPriority.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -169,7 +169,7 @@ public class EditNodeFragment extends Fragment {
             }
         });
 
-        title.setText(node.name);
+        title.setText(node.getDisplayName());
         String payload = node.getCleanedPayload();
         if (payload.length() > 0) {
             content.setText(payload);
@@ -238,12 +238,12 @@ public class EditNodeFragment extends Fragment {
     private void createNewNode(ContentResolver resolver) {
         // Creating new node
         node = new OrgNode();
-        node.parentId = parentId;
-        node.position = position;
+        node.setParentId(parentId);
+        node.setPositionInParent(position);
         try {
             OrgNode parentNode = new OrgNode(parentId, resolver);
-            node.level = parentNode.level + 1;
-            node.fileId = parentNode.fileId;
+            node.setLevel(parentNode.getLevel() + 1);
+            node.setFileId(parentNode.getFileId());
         } catch (OrgNodeNotFoundException e) {
             e.printStackTrace();
         }
@@ -259,8 +259,8 @@ public class EditNodeFragment extends Fragment {
         outState.putSerializable(SSTATE_DEADLINE_DATE, node.getDeadline().getDate());
         outState.putSerializable(SSTATE_DEADLINE_TIME, node.getDeadline().getTime());
 
-        outState.putString("btnTodo", node.todo);
-        outState.putString("btnPriority", node.priority);
+        outState.putString("btnTodo", node.getTodo());
+        outState.putString("btnPriority", node.getPriority());
     }
 
     @Override
@@ -286,7 +286,7 @@ public class EditNodeFragment extends Fragment {
             // Use the padding level from the former payload
             paddingLevel = FileUtils.getMinimumPadding(previousPayload);
         } else {
-            paddingLevel = node.level + 1;
+            paddingLevel = node.getLevel() + 1;
         }
 
         for (int i = 0; i < paddingLevel; i++) padding += ' ';
@@ -294,7 +294,7 @@ public class EditNodeFragment extends Fragment {
             payload += padding + line + "\n";
         }
 
-        node.name = title.getText().toString();
+        node.setDisplayName(title.getText().toString());
 
         node.setPayload(payload);
 
@@ -334,7 +334,7 @@ public class EditNodeFragment extends Fragment {
                             public void onClick(DialogInterface dialog,
                                                 int which) {
                                 String selectedPriority = priorityList.get(which);
-                                node.priority = selectedPriority;
+                                node.setPriority(selectedPriority);
 //                                setupTodoButton(context,node,button, false);
                                 btnPriority.setText(selectedPriority);
                             }
